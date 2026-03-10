@@ -1,0 +1,64 @@
+﻿# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Build and packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Jupyter and notebook checkpoints
+.ipynb_checkpoints/
+
+# Test and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Type checker / linter caches
+.mypy_cache/
+.ruff_cache/
+.pyre/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Dataset artifacts (keep lightweight metadata only)
+ai/dataset/raw/
+ai/dataset/interim/
+ai/dataset/processed/
+*.wav
+*.flac
+*.mp3
+
+# Model checkpoints and exported model artifacts
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.bin
+checkpoints/
+ai/models/checkpoints/
+
+# Torch cache
+.torch/
+
+# Environment files
+.env
+.env.*
