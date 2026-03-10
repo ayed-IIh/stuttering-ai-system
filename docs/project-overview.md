@@ -1,36 +1,60 @@
-﻿# Project Overview
+# Project Overview
 
-## Project Vision
-Build a production-ready AI platform that detects and analyzes stuttering patterns from speech recordings, enabling accurate, explainable, and scalable speech assessment workflows.
+## Vision
+Create a reliable AI system that detects stuttering patterns from speech recordings and serves as the ML core for a future mobile application and therapist dashboard.
+
+## Project Phases
+- Phase 1: AI model training (current)
+- Phase 2: Backend API integration
+- Phase 3: Mobile app integration
+
+## Problem Type
+- Task: Audio classification
+- Input: `.wav` speech recording
+- Output: Predicted stuttering category
+
+Target classes:
+- Fluent
+- Blocks
+- Prolongations
+- Repetitions
+- Interjections
 
 ## Dataset Structure
-The dataset layer should separate data by lifecycle stage:
-- `ai/dataset/raw/`: immutable source audio recordings (`.wav`) and source metadata.
-- `ai/dataset/interim/`: cleaned or segmented intermediate outputs.
-- `ai/dataset/processed/`: model-ready tensors/features and labels.
-- `ai/dataset/metadata/`: manifests, label mappings, speaker/session metadata.
+Inside `ai/dataset/` maintain a clear lifecycle:
+- `raw/`: original labeled `.wav` files
+- `interim/`: cleaned/chunked files generated during preprocessing
+- `processed/`: model-ready features and split manifests
+- `metadata/`: label maps, speaker/session information, QA notes
 
-Recommended conventions:
-- Use stable file IDs and consistent naming (`speakerId_sessionId_clipId.wav`).
-- Version dataset manifests and label definitions in Git.
-- Keep large audio and binary artifacts outside Git (object storage or DVC in future).
+Recommended dataset checks:
+- Validate sample rate consistency.
+- Detect empty/corrupted files.
+- Verify class balance.
+- Freeze train/validation splits for reproducibility.
 
 ## AI Pipeline
-1. Data ingestion: collect `.wav` files and metadata.
-2. Preprocessing: resample audio, denoise, trim silence, and normalize.
-3. Feature extraction: generate features such as mel spectrograms / embeddings.
-4. Training: train stuttering classification/detection models.
-5. Evaluation: compute metrics (F1, precision, recall, confusion matrix).
-6. Model packaging: export best models for backend inference services.
+1. Load and validate audio files.
+2. Apply preprocessing (resample, normalize, optional trimming).
+3. Extract model inputs for encoder.
+4. Encode speech using `facebook/wav2vec2-base` or HuBERT.
+5. Apply pooling over time dimension.
+6. Predict class logits via classification head.
+7. Convert logits to probabilities and class labels.
 
 ## System Architecture
-- AI modules (`ai/`) handle experiments, training, and model quality.
-- Backend modules (`backend/`) provide APIs, inference orchestration, and persistence.
-- PostgreSQL stores metadata, prediction logs, and operational records.
-- Future AWS deployment can host model inference services and scalable storage.
+- AI layer (`ai/`): preprocessing, model training, and evaluation.
+- Backend layer (`backend/`): FastAPI inference service and integrations.
+- Data layer (`backend/db/`): PostgreSQL for metadata, predictions, and operations.
+- Cloud layer (future AWS): storage, deployment, and scaling.
 
 ## Team Responsibilities
-- Ali — data ingestion, labeling flow, and preprocessing data pipeline.
-- Adan — model architecture design, training strategy, and evaluation quality.
-- Saddouq — AI-backend integration for model serving and inference workflows.
-- Wael — backend API, database schema, and operational reliability.
+- Ali: dataset validation, train/validation split, dataset structure.
+- Adan: model implementation, training loop, experiment tracking, evaluation.
+- Saddouq: inference endpoint, model loading, API integration.
+- Wael: database schema, backend endpoints, data flow reliability.
+
+## Workflow and Collaboration
+- Branches: `main`, `dev`, `feature/*`
+- PR flow: feature branch -> `dev` -> `main`
+- Task board columns: Backlog, Ready, In Progress, Review, Done, Blocked
