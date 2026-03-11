@@ -4,6 +4,8 @@ transformers
 numpy
 pandas
 librosa
+soundfile
+tqdm
 fastapi
 uvicorn
 scikit-learn
