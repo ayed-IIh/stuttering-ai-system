@@ -89,6 +89,29 @@ BEGIN
     END IF;
 END$$;
 
+-- Check constraint: predicted_class must be one of the known classes
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_predicted_class'
+    ) THEN
+        ALTER TABLE predictions
+            ADD CONSTRAINT chk_predicted_class
+            CHECK (
+                predicted_class IN (
+                    'fluent',
+                    'blocks',
+                    'interjections',
+                    'prolongations',
+                    'part_word_repetition',
+                    'phrase_repetition',
+                    'word_repetition'
+                )
+            );
+    END IF;
+END$$;
+
 
 -- Indexes 
 CREATE INDEX IF NOT EXISTS idx_predictions_created_at
