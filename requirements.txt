@@ -1,5 +1,6 @@
 ﻿torch
 torchaudio
+torchcodec  # required by torchaudio >= 2.9 for audio loading
 transformers
 numpy
 pandas

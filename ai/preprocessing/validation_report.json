@@ -1,0 +1,3521 @@
+{
+  "script_version": "1.0.0",
+  "generated_at": "2026-03-12T18:29:45Z",
+  "inventory_csv": "/home/ali/projects/stuttering-ai-system/ai/dataset/metadata/dataset_inventory.csv",
+  "config": {
+    "expected_sample_rate": 16000,
+    "min_duration_seconds": 0.5,
+    "max_duration_seconds": 30.0,
+    "rms_silence_threshold": 0.0001
+  },
+  "summary": {
+    "total_files": 199,
+    "passed": 140,
+    "failed": 59,
+    "warned": 199,
+    "pass_rate_pct": 70.4
+  },
+  "files": [
+    {
+      "filename": "03.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/03.2.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.55,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "04.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/04.2.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.35,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "07.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/07.1.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.45,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "11.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/11.1.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.55,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_05.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_05.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_06.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_06.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_102.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_102.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_107.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_107.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_109.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_109.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_12.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_12.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_13.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_13.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_14.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_14.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_18.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_18.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_29.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_29.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_33.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_33.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_37.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_37.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_38.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_38.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_60.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_60.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU07.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU07.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU12.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU12.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU13.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU13.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU14.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU14.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU15.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU15.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU16.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU16.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU18.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU18.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU30.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU30.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU33.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU33.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU38.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU38.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU41.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU41.1.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU42.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU42.2.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU45.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU45.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU46.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU46.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU48.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU48.1.wav",
+      "class_label": "blocks",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.95,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU66.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU66.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU71.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU71.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU72.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU72.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU74.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU74.wav",
+      "class_label": "blocks",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "01.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/01.3.wav",
+      "class_label": "fluent",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "02.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/02.2.wav",
+      "class_label": "fluent",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "03.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/03.1.wav",
+      "class_label": "fluent",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.35,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_10.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_10.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_100.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_100.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_101.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_101.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_104.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_104.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_105.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_105.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_106.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_106.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_108.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_108.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_16.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_16.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_17.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_17.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_27.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_27.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_32.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_32.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_50.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_50.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_61.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_61.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_84.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_84.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_85.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_85.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_86.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_86.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_87.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_87.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_88.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_88.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_89.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_89.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_90.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_90.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_91.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_91.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_92.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_92.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_93.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_93.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_94.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_94.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_95.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_95.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_96.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_96.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_97.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_97.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_98.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_98.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU02.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU02.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU08.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU08.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU11.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU11.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU17.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU17.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU22.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU22.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU28.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU28.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU69.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU69.wav",
+      "class_label": "fluent",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "34.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/34.3.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.6,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "43.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/43.1.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_99.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/Audio_99.wav",
+      "class_label": "interjections",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU01.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU01.2.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU04.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU04.wav",
+      "class_label": "interjections",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU36.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU36.wav",
+      "class_label": "interjections",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU37.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU37.wav",
+      "class_label": "interjections",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU48.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU48.2.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.05,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU53.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU53.2.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.15,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU58.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU58.1.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 7.65,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU65.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU65.1.wav",
+      "class_label": "interjections",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.05,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU67.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU67.wav",
+      "class_label": "interjections",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "08.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/08.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 1.65,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "15.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/15.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.9,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "24.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/24.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 7.2,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "34.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/34.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.300023,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "40.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/40.1.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.05,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "41.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/41.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.35,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "52.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/52.1.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.25,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "56.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/56.1.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.2,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "57.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/57.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "59.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/59.2.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.45,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_26.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_26.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_39.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_39.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_47.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_47.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_48.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_48.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_49.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_49.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_53.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_53.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_54.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_54.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_55.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_55.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_58.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_58.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_62.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_62.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_63.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_63.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_64.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_64.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_65.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_65.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_67.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_67.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_68.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_68.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU01.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU01.3.wav",
+      "class_label": "prolongations",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.15,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU03.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU03.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU25.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU25.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU31.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU31.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU35.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU35.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU63.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU63.wav",
+      "class_label": "prolongations",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "01.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/01.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.7,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "04.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/04.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "04.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/04.3.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "08.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/08.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 1.75,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "08.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/08.3.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.5,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "15.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/15.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.1,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "34.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/34.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.1,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "40.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/40.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "41.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/41.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 1.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "41.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/41.3.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "43.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/43.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 7.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "52.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/52.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.700023,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "56.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/56.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 7.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "59.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/59.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.5,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_19.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_19.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_20.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_20.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_21.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_21.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_22.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_22.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_23.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_23.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_25.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_25.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_30.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_30.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_31.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_31.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_35.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_35.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_36.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_36.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_44.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_44.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_45.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_45.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_46.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_46.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_66.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_66.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_69.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_69.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_70.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_70.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_71.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_71.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU06.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU06.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU09.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU09.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU20.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU20.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU21.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU21.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU23.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU23.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU24.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU24.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU27.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU27.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU29.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU29.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU32.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU32.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU34.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU34.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU42.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU42.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.25,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU44.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU44.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU49.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU49.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU50.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU50.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU51.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU51.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.1,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU51.3.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU51.3.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.3,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU52.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU52.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU54.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU54.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU55.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU55.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU56.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU56.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU57.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU57.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU58.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU58.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.3,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU59.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU59.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.9,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU60.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU60.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU61.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU61.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU62.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU62.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU64.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU64.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU65.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU65.2.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.9,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU70.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU70.wav",
+      "class_label": "part_word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFUH01.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFUH01.1.wav",
+      "class_label": "part_word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 3.05,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "02.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Phrase repetition/02.1.wav",
+      "class_label": "phrase_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.25,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_103.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Phrase repetition/Audio_103.wav",
+      "class_label": "phrase_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "01.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/01.2.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.3,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "07.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/07.2.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.6,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "11.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/11.2.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.4,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "24.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/24.1.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 2.8,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "57.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/57.1.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 5.2,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_09.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/Audio_09.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_28.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/Audio_28.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "Audio_51.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/Audio_51.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU05.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU05.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU10.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU10.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU19.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU19.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU26.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU26.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU39.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU39.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU41.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU41.2.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU51.2.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU51.2.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.65,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU53.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU53.1.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 4.45,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU59.1.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU59.1.wav",
+      "class_label": "word_repetition",
+      "passed": false,
+      "failures": [
+        "wrong_sample_rate: expected 16000, got 44100"
+      ],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 44100,
+      "observed_channels": 2,
+      "observed_duration_seconds": 6.15,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    },
+    {
+      "filename": "KFHU68.wav",
+      "absolute_path": "/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU68.wav",
+      "class_label": "word_repetition",
+      "passed": true,
+      "failures": [],
+      "warnings": [
+        "stereo_audio: 2 channels detected, expected mono"
+      ],
+      "observed_sample_rate": 16000,
+      "observed_channels": 2,
+      "observed_duration_seconds": 10.0,
+      "torchaudio_ok": true,
+      "librosa_ok": true,
+      "torchaudio_error": null,
+      "librosa_error": null
+    }
+  ]
+}
