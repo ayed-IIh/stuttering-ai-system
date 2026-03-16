@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
-from sqlalchemy import String, Text, DateTime, Float, Boolean, Integer, ForeignKey, CheckConstraint, Index, Enum
+from sqlalchemy import String, Text, DateTime, Float, Boolean, Integer, ForeignKey, CheckConstraint, Index
 from sqlalchemy.sql import func
 import uuid
 import enum
@@ -56,7 +56,6 @@ class Prediction(Base):
     request_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), unique=True, nullable=False
     )
-
 
     # Table-level constraints & indexes
     __table_args__ = (

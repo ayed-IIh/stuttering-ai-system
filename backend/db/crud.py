@@ -1,15 +1,18 @@
 from typing import List
-from fastapi import HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import select
-from .models import Prediction 
-from .schemas import PredictionCreate
+
 import logging
 import uuid
 
+from fastapi import HTTPException
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from .models import Prediction
+from .schemas import PredictionCreate
 
 logger = logging.getLogger(__name__)
+
 
 async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Prediction:
     values = data.dict()
@@ -27,7 +30,6 @@ async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Predict
 
     except IntegrityError as e:
         await db.rollback()
-
         msg = str(e.orig) if hasattr(e, "orig") else str(e)
 
         if "chk_predicted_class" in msg:
@@ -53,19 +55,18 @@ async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Predict
             status_code=500,
             detail="Unexpected error while creating prediction",
         )
-        
+
+
 async def get_recent_predictions(db: AsyncSession, limit: int = 50) -> List[Prediction]:
     limit = max(1, min(limit, 50))
     try:
         result = await db.execute(
-        select(Prediction)
-        .order_by(Prediction.created_at.desc())
-        .limit(limit)
+            select(Prediction)
+            .order_by(Prediction.created_at.desc())
+            .limit(limit)
         )
         predictions = result.scalars().all()
         return predictions
     except SQLAlchemyError as e:
         logger.error("Database error while fetching predictions: %s", e)
         raise HTTPException(status_code=500, detail="Internal DB error.")
-
-    
