@@ -20,7 +20,7 @@ STUTTERING_CLASSES = [
     "blocks",              # 1
     "interjections",       # 2
     "prolongations",       # 3
-    "part_word_repetition", # 4
+    "part_word_repetition",  # 4
     "phrase_repetition",   # 5
     "word_repetition",     # 6
 ]
