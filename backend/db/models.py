@@ -1,12 +1,10 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
 from sqlalchemy import String, Text, DateTime, Float, Boolean, Integer, ForeignKey, CheckConstraint, Index
 from sqlalchemy.sql import func
 from .database import Base
 import uuid
 import enum
-
-
 
 
 # Enum for predicted_class
