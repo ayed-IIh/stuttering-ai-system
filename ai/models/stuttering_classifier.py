@@ -13,17 +13,10 @@ from typing import Optional
 import torch
 import torch.nn as nn
 from transformers import Wav2Vec2Model
+from shared.labels import CLASS_LABELS, NUM_CLASSES
 
-# Class index to label mapping for the 7-way stuttering taxonomy
-STUTTERING_CLASSES = [
-    "fluent",              # 0
-    "blocks",              # 1
-    "interjections",       # 2
-    "prolongations",       # 3
-    "part_word_repetition",  # 4
-    "phrase_repetition",   # 5
-    "word_repetition",     # 6
-]
+# Backward-compatible alias retained for existing imports/tests.
+STUTTERING_CLASSES = list(CLASS_LABELS)
 
 
 @dataclass
@@ -31,7 +24,7 @@ class ModelConfig:
     """Configuration for building and training the stuttering classifier."""
 
     model_name: str = "facebook/wav2vec2-base"
-    num_classes: int = 7
+    num_classes: int = NUM_CLASSES
     dropout_rate: float = 0.1
     freeze_encoder: bool = True
     learning_rate: float = 1e-4

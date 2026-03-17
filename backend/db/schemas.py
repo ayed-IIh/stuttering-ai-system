@@ -1,5 +1,6 @@
 from pydantic import BaseModel, IPvAnyAddress, validator
 from uuid import UUID
+from shared.labels import LABEL2ID
 
 
 class ConfidenceScores(BaseModel):
@@ -26,3 +27,12 @@ class PredictionCreate(BaseModel):
     model_version_id: UUID
     processing_time_ms: int
     client_ip: IPvAnyAddress
+
+    @validator("predicted_class")
+    def predicted_class_is_valid(cls, v):
+        if v not in LABEL2ID:
+            raise ValueError(
+                "predicted_class must be one of: "
+                + ", ".join(LABEL2ID.keys())
+            )
+        return v
