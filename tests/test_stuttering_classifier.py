@@ -11,6 +11,7 @@ from ai.models.stuttering_classifier import (
     StutteringClassifier,
     build_model,
 )
+from shared.labels import NUM_CLASSES
 
 
 # Use a tiny model in tests to avoid downloading ~360MB and speed up runs.
@@ -23,7 +24,7 @@ def config():
     """Config with tiny model and small defaults for fast tests."""
     return ModelConfig(
         model_name=TINY_MODEL,
-        num_classes=7,
+        num_classes=NUM_CLASSES,
         dropout_rate=0.1,
         freeze_encoder=True,
         learning_rate=1e-4,
@@ -40,7 +41,7 @@ def test_model_config_defaults():
     """ModelConfig has expected default values."""
     c = ModelConfig()
     assert c.model_name == "facebook/wav2vec2-base"
-    assert c.num_classes == 7
+    assert c.num_classes == NUM_CLASSES
     assert c.dropout_rate == 0.1
     assert c.freeze_encoder is True
     assert c.learning_rate == 1e-4
@@ -48,7 +49,7 @@ def test_model_config_defaults():
 
 def test_stuttering_classes():
     """STUTTERING_CLASSES has 7 entries and correct labels."""
-    assert len(STUTTERING_CLASSES) == 7
+    assert len(STUTTERING_CLASSES) == NUM_CLASSES
     assert STUTTERING_CLASSES[0] == "fluent"
     assert STUTTERING_CLASSES[1] == "blocks"
     assert STUTTERING_CLASSES[2] == "interjections"
@@ -63,7 +64,7 @@ def test_forward_output_shape(model):
     batch, seq_len = 2, 1000
     input_values = torch.randn(batch, seq_len)
     logits = model(input_values)
-    assert logits.shape == (batch, 7)
+    assert logits.shape == (batch, NUM_CLASSES)
 
 
 def test_forward_with_attention_mask(model):
@@ -74,7 +75,7 @@ def test_forward_with_attention_mask(model):
     attention_mask = torch.ones(batch, seq_len)
     attention_mask[1, 500:] = 0
     logits = model(input_values, attention_mask=attention_mask)
-    assert logits.shape == (batch, 7)
+    assert logits.shape == (batch, NUM_CLASSES)
 
 
 def test_freeze_encoder_freezes_params(config):

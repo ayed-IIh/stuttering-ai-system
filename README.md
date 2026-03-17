@@ -11,11 +11,15 @@ An AI-powered system for detecting and analyzing stuttering patterns from speech
 This repository provides a clean, scalable foundation for training and serving an audio classification model that predicts stuttering type from `.wav` recordings.
 
 The classification labels are:
-- Fluent
-- Blocks
-- Prolongations
-- Repetitions
-- Interjections
+- fluent
+- blocks
+- interjections
+- prolongations
+- part_word_repetition
+- phrase_repetition
+- word_repetition
+
+Canonical mapping is maintained in `shared/labels.py`.
 
 ## Tech Stack
 - Python
@@ -66,6 +70,7 @@ stuttering-ai-system/
 |  |- api/                          # Route definitions and request/response schemas
 |  |- services/                     # Inference/business logic layer
 |  `- db/                           # PostgreSQL access, schema, and persistence utilities
+|- shared/                          # Shared constants used by AI and backend (e.g., labels)
 |- scripts/                         # Local automation scripts (data checks, run helpers)
 |- docs/                            # Technical documentation and team guidelines
 |- requirements.txt                 # Python dependency list

@@ -17,9 +17,9 @@ import torch
 from ai.models.stuttering_classifier import (
     STUTTERING_CLASSES,
     ModelConfig,
-    StutteringClassifier,
     build_model,
 )
+from shared.labels import NUM_CLASSES
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
     # Tiny model for fast smoke test (no large download)
     config = ModelConfig(
         model_name="hf-internal-testing/tiny-random-Wav2Vec2Model",
-        num_classes=7,
+        num_classes=NUM_CLASSES,
         dropout_rate=0.1,
         freeze_encoder=True,
     )
@@ -41,7 +41,7 @@ def main():
     print(f"Forward: input {x.shape} -> ", end="")
     logits = model(x)
     print(f"output {logits.shape}")
-    assert logits.shape == (batch, 7), logits.shape
+    assert logits.shape == (batch, NUM_CLASSES), logits.shape
     assert not torch.isnan(logits).any()
 
     print("Classes:", STUTTERING_CLASSES)
