@@ -12,16 +12,28 @@ the SQL migration file:
 Do NOT rely on SQLAlchemy create_all() in production.
 """
 
-from backend.db.database import AsyncEngine
-from backend.db.models import Base
+from .database import AsyncEngine
+from .database import Base
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 
 async def init_db():
     """Create all tables using SQLAlchemy metadata. Used only for local development."""
-    print("Creating database tables...")
-    async with AsyncEngine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    print("Tables created successfully.")
+    try:
+        logger.info("Creating database tables...")
+        async with AsyncEngine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Tables created successfully.")
+    except Exception as e:
+        logger.info(f"❌ Failed to create tables: {e}")
+        raise
 
 
 if __name__ == "__main__":

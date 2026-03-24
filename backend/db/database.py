@@ -3,8 +3,16 @@ from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 required_env_vars = [
     'POSTGRES_HOST',
@@ -16,6 +24,7 @@ required_env_vars = [
 
 missing_vars = [var for var in required_env_vars if not os.getenv(var)]
 if missing_vars:
+    logger.info(f"Missing required environment variables: {', '.join(missing_vars)}")
     raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
 
 
@@ -32,6 +41,16 @@ class Base(DeclarativeBase):
 AsyncEngine = create_async_engine(DATABASE_URL, echo=True)
 
 async_session_maker = async_sessionmaker(AsyncEngine, expire_on_commit=False)
+
+
+async def test_db_connection():
+    try:
+        async with AsyncEngine.begin() as conn:
+            await conn.run_sync(lambda conn: None)
+        logger.info("Database connected successfully!")
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        raise
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
