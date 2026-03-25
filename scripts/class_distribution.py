@@ -20,17 +20,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
-matplotlib.use("Agg")  # must set backend before pyplot import — safe for headless
-import matplotlib.patches as mpatches  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
+matplotlib.use("Agg")  # non-interactive backend — safe for headless environments
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+import pandas as pd
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 SCRIPT_VERSION = "1.0.0"
 
-# Canonical class order matches model output indices (stuttering_classifier.py:18)
+# Canonical class order matches model output indices 
 STUTTERING_CLASSES: list[str] = [
     "fluent",
     "blocks",
@@ -96,7 +96,7 @@ class ClassStats:
     below_min_viable: bool
     below_recommended: bool
 
-# ── Shared utilities (KISS — minimal, self-contained) ─────────────────────────
+# ── Shared utilities  ───────────────────────────────────────────────────────────
 
 def _project_root() -> Path:
     return Path(__file__).resolve().parent.parent
@@ -216,7 +216,7 @@ def plot_sample_counts(stats: list[ClassStats], plots_dir: Path) -> Path:
     ax.legend(handles=legend_patches + ax.get_lines(), fontsize=9, loc="upper right")
 
     ax.set_xticks(x)
-    ax.set_xticklabels([DISPLAY_LABELS[lbl] for lbl in labels], fontsize=10)
+    ax.set_xticklabels([DISPLAY_LABELS[l] for l in labels], fontsize=10)
     ax.set_ylabel("Sample count", fontsize=12)
     ax.set_title("Per-Class Sample Counts (n=7 classes)", fontsize=14, fontweight="bold", pad=12)
     ax.set_ylim(0, max(counts) * 1.18)
@@ -271,10 +271,10 @@ def plot_duration_boxplot(df: pd.DataFrame, plots_dir: Path) -> Path:
         )
 
     max_dur = df["duration_seconds"].dropna().max()
-    ax.set_ylim(0, max_dur + 2)  # headroom so 10s samples don't sit at the ceiling
+    ax.set_ylim(0, max_dur + 2)  
 
     ax.set_xticks(range(1, len(STUTTERING_CLASSES) + 1))
-    ax.set_xticklabels([DISPLAY_LABELS[lbl] for lbl in STUTTERING_CLASSES], fontsize=10)
+    ax.set_xticklabels([DISPLAY_LABELS[l] for l in STUTTERING_CLASSES], fontsize=10)
     ax.set_ylabel("Duration (seconds)", fontsize=12)
     ax.set_title("Audio Duration Distributions per Class", fontsize=14, fontweight="bold", pad=12)
 
@@ -303,8 +303,8 @@ def plot_class_share_pie(stats: list[ClassStats], plots_dir: Path) -> Path:
 
     labels = [s.class_label for s in stats]
     counts = [s.count for s in stats]
-    colours = [CLASS_COLORS[lbl] for lbl in labels]  # 7 distinct — each class identifiable
-    explode = [0.06 if lbl in REPETITION_SUBCLASSES else 0.0 for lbl in labels]
+    colours = [CLASS_COLORS[l] for l in labels]  
+    explode = [0.06 if l in REPETITION_SUBCLASSES else 0.0 for l in labels]
 
     fig, ax = plt.subplots(figsize=(9, 7))
     wedges, _, autotexts = ax.pie(
@@ -322,7 +322,7 @@ def plot_class_share_pie(stats: list[ClassStats], plots_dir: Path) -> Path:
         at.set_fontweight("bold")
 
     # Legend with display label + raw count
-    legend_labels = [f"{DISPLAY_LABELS[lbl].replace(chr(10), ' ')} ({c})" for lbl, c in zip(labels, counts)]
+    legend_labels = [f"{DISPLAY_LABELS[l].replace(chr(10), ' ')} ({c})" for l, c in zip(labels, counts)]
     ax.legend(wedges, legend_labels, title="Class (count)", loc="lower left",
               bbox_to_anchor=(-0.15, -0.05), fontsize=9, title_fontsize=9)
 
@@ -404,16 +404,9 @@ def write_report(
         for s in stats
     ]
 
-    def _rep_status(count: int) -> str:
-        if count < 10:
-            return "CRITICAL"
-        if count < MIN_VIABLE_THRESHOLD:
-            return "BELOW MIN"
-        return "BELOW RECOMMENDED"
-
     rep_rows = [
         [f"`{s.class_label}`", s.count, MIN_VIABLE_THRESHOLD,
-         max(0, MIN_VIABLE_THRESHOLD - s.count), _rep_status(s.count)]
+         max(0, MIN_VIABLE_THRESHOLD - s.count), "CRITICAL" if s.count < 10 else "BELOW MIN"]
         for s in stats if s.is_repetition_subclass
     ]
 
