@@ -1,5 +1,15 @@
 # S3 Architecture Documentation — Stuttering AI Project
 
+**Project:** Stuttering AI
+
+**Document:** S3 Bucket Architecture
+
+**Version:** 1.0
+
+**Last Updated:** 2026-03-25
+
+**Reference:** WAE-05
+
 ---
 
 ## Table of Contents
@@ -227,4 +237,3 @@ Two lifecycle rules are configured on this bucket:
 7. Click  **Save changes** .
 
 > **Important:** The `Deny` statement in each policy uses `ArnNotEquals` / `ArnNotLike` conditions. After saving, verify access immediately by assuming the intended role and running a test operation. An incorrect ARN will lock out all access including your own admin session (admin access via the root account is always preserved).
->
