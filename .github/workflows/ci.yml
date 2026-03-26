@@ -40,7 +40,7 @@ jobs:
      
       - name: Run flake8
         run: |
-          flake8 ai/ backend/ --max-line-length=120
+          flake8 ai/ backend/ --config=.flake8
 
       
       - name: Run pytest (unit tests only)

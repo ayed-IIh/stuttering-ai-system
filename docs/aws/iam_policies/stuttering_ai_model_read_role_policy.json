@@ -1,0 +1,29 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ListModelsBucketLimited",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "arn:aws:s3:::stuttering-ai-models",
+            "Condition": {
+                "StringLike": {
+                    "s3:prefix": [
+                        "",
+                        "models/",
+                        "models/*"
+                    ]
+                }
+            }
+        },
+        {
+            "Sid": "ReadModelsOnly",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::stuttering-ai-models/models/*"
+        }
+    ]
+}
