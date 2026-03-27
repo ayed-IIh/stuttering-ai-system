@@ -1,0 +1,24 @@
+# Example training config — set paths to your processed train/val manifests (CSV).
+experiment_name: baseline_frozen
+
+paths:
+  train_manifest: ai/dataset/processed/train_manifest.csv
+  val_manifest: ai/dataset/processed/val_manifest.csv
+  checkpoint_root: ai/training/checkpoints
+  log_root: ai/training/logs
+
+model:
+  model_name: facebook/wav2vec2-base
+  num_classes: 7
+  dropout_rate: 0.1
+  freeze_encoder: true
+
+training:
+  batch_size: 8
+  num_workers: 0
+  num_epochs: 10
+  learning_rate: 3.0e-5
+  weight_decay: 0.01
+  warmup_ratio: 0.1
+  max_grad_norm: 1.0
+  seed: 42
