@@ -79,6 +79,29 @@ class ManifestAudioDataset(Dataset):
         return {"audio": audio, "label": label}
 
 
+def _attention_mask_from_encoded(
+    encoded: Any,
+    input_values: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Return attention_mask from processor output, or a valid mask if the processor
+    omits it (some checkpoints / transformers versions omit the key).
+    """
+    mask: torch.Tensor | None = None
+    if isinstance(encoded, dict):
+        mask = encoded.get("attention_mask")
+    else:
+        mask = getattr(encoded, "attention_mask", None)
+        if mask is None and hasattr(encoded, "get"):
+            mask = encoded.get("attention_mask")  # BatchEncoding
+
+    if mask is not None:
+        return mask
+
+    # No padding positions known — treat full sequence as valid (typical when mask key is missing).
+    return torch.ones(input_values.shape[:2], dtype=torch.long, device=input_values.device)
+
+
 def _collate_wav2vec(
     batch: list[dict[str, Any]],
     processor: Wav2Vec2Processor,
@@ -91,10 +114,13 @@ def _collate_wav2vec(
         sampling_rate=sampling_rate,
         padding=True,
         return_tensors="pt",
+        return_attention_mask=True,
     )
+    input_values = encoded["input_values"]
+    attention_mask = _attention_mask_from_encoded(encoded, input_values)
     return {
-        "input_values": encoded["input_values"],
-        "attention_mask": encoded["attention_mask"],
+        "input_values": input_values,
+        "attention_mask": attention_mask,
         "labels": labels,
     }
 
