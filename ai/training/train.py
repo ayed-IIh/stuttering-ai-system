@@ -18,7 +18,11 @@ import torch.nn.functional as F
 import yaml
 from sklearn.metrics import accuracy_score, f1_score
 from torch.optim import AdamW
-from transformers import Wav2Vec2Processor, get_linear_schedule_with_warmup
+from transformers import (
+    Wav2Vec2Processor,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
+)
 
 # Repo root on sys.path when running as `python ai/training/train.py`
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -35,7 +39,10 @@ from ai.training.dataloader import get_dataloader  # noqa: E402
 from shared.labels import LABEL2ID  # noqa: E402
 
 
-def _get_device() -> torch.device:
+def _get_device(device_cfg: str = "auto") -> torch.device:
+    """Resolve compute device from config string ('auto', 'cuda', 'mps', 'cpu')."""
+    if device_cfg != "auto":
+        return torch.device(device_cfg)
     if torch.cuda.is_available():
         return torch.device("cuda")
     if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
@@ -150,14 +157,16 @@ def main() -> None:
     cwd = Path.cwd().resolve()
     raw = _load_config(config_path)
 
-    experiment_name = str(raw["experiment_name"])
-    paths = raw["paths"]
+    data_cfg = raw["data"]
+    output_cfg = raw["output"]
     training = raw["training"]
 
-    train_manifest = _resolve_path(cwd, paths["train_manifest"])
-    val_manifest = _resolve_path(cwd, paths["val_manifest"])
-    checkpoint_root = _resolve_path(cwd, paths["checkpoint_root"])
-    log_root = _resolve_path(cwd, paths["log_root"])
+    experiment_name = str(output_cfg["experiment_name"])
+
+    train_manifest = _resolve_path(cwd, data_cfg["train_manifest"])
+    val_manifest = _resolve_path(cwd, data_cfg["val_manifest"])
+    checkpoint_root = _resolve_path(cwd, output_cfg.get("checkpoint_dir", "ai/training/checkpoints"))
+    log_root = _resolve_path(cwd, output_cfg.get("log_dir", "ai/training/logs"))
 
     exp_ckpt_dir = checkpoint_root / experiment_name
     exp_log_dir = log_root / experiment_name
@@ -165,22 +174,24 @@ def main() -> None:
     last_model_path = exp_ckpt_dir / "last_model.pt"
     training_log_csv = exp_log_dir / "training_log.csv"
 
-    seed = int(training["seed"])
+    seed = int(training.get("seed", 42))
     _set_seed(seed)
 
-    device = _get_device()
+    device_cfg = str(output_cfg.get("device", "auto"))
+    device = _get_device(device_cfg)
 
     model_cfg = raw["model"]
     processor = Wav2Vec2Processor.from_pretrained(model_cfg["model_name"])
     model = _build_model(raw, device)
 
     batch_size = int(training["batch_size"])
-    num_workers = int(training["num_workers"])
+    num_workers = int(training.get("num_workers", 0))
     num_epochs = int(training["num_epochs"])
     lr = float(training["learning_rate"])
-    weight_decay = float(training["weight_decay"])
-    warmup_ratio = float(training["warmup_ratio"])
-    max_grad_norm = float(training["max_grad_norm"])
+    weight_decay = float(training.get("weight_decay", 0.01))
+    warmup_ratio = float(training.get("warmup_ratio", 0.0))
+    max_grad_norm = float(training.get("gradient_clip_norm", 1.0))
+    scheduler_type = str(training.get("scheduler_type", "linear"))
 
     train_loader = get_dataloader(
         train_manifest,
@@ -209,11 +220,18 @@ def main() -> None:
 
     num_training_steps = num_epochs * len(train_loader)
     num_warmup_steps = int(num_training_steps * warmup_ratio)
-    scheduler = get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=num_training_steps,
-    )
+    if scheduler_type == "cosine":
+        scheduler = get_cosine_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
+        )
+    else:
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
+        )
 
     log_fields = (
         "epoch",
