@@ -243,6 +243,7 @@ def main() -> None:
     )
 
     best_f1 = -1.0
+    best_val_loss = float("inf")
     epoch = 0
 
     try:
@@ -256,6 +257,8 @@ def main() -> None:
                 max_grad_norm,
             )
             val_loss, val_acc, val_macro_f1 = _validate(model, val_loader, device)
+            best_val_loss = min(best_val_loss, val_loss)
+            running_best_f1 = max(best_f1, val_macro_f1)
 
             lr_now = scheduler.get_last_lr()[0] if scheduler.get_last_lr() else lr
 
@@ -284,6 +287,10 @@ def main() -> None:
                     "val_accuracy": val_acc,
                     "val_macro_f1": val_macro_f1,
                 },
+                best_val_loss=best_val_loss,
+                best_val_f1=running_best_f1,
+                config=raw,
+                label2id=dict(LABEL2ID),
             )
 
             if val_macro_f1 > best_f1:
@@ -291,8 +298,14 @@ def main() -> None:
                 save_best_checkpoint(
                     best_model_path,
                     model,
+                    optimizer=optimizer,
                     val_macro_f1=val_macro_f1,
+                    val_loss=val_loss,
+                    best_val_loss=best_val_loss,
+                    best_val_f1=best_f1,
                     epoch=epoch,
+                    config=raw,
+                    label2id=dict(LABEL2ID),
                     extra={"config_path": str(config_path)},
                 )
 
@@ -314,6 +327,10 @@ def main() -> None:
             scheduler=scheduler,
             epoch=epoch,
             metrics={"interrupted": True, "note": "keyboard_interrupt"},
+            best_val_loss=best_val_loss,
+            best_val_f1=best_f1,
+            config=raw,
+            label2id=dict(LABEL2ID),
         )
         raise SystemExit(130) from None
 
