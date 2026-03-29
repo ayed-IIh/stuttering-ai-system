@@ -117,7 +117,7 @@ def warn_forced_classes(forced_df: pd.DataFrame) -> None:
         print(
             f"WARNING: '{label}' has {n} sample(s)"
             f" (< MIN_SAMPLES_FOR_SPLIT={MIN_SAMPLES_FOR_SPLIT})"
-            " — all assigned to train"
+            " -- all assigned to train"
         )
 
 
@@ -193,13 +193,13 @@ def print_split_distribution(
         rows.append((lbl, tr, v, te))
 
     w = max(len(lbl) for lbl in all_labels) + 2
-    sep = "─" * (w + 28)
+    sep = "-" * (w + 28)
 
     print(f"\n{sep}")
-    print(f"  split_dataset v{SCRIPT_VERSION}  —  "
+    print(f"  split_dataset v{SCRIPT_VERSION}  --  "
           f"train={len(train)}  val={len(val)}  test={len(test)}")
     print(f"  {'class':<{w}}  train   val  test")
-    print(f"  {'─' * (w + 24)}")
+    print(f"  {'-' * (w + 24)}")
     for lbl, tr, v, te in rows:
         note = "  [forced-train]" if lbl in forced else ""
         print(f"  {lbl:<{w}}  {tr:>5}  {v:>5}  {te:>5}{note}")
