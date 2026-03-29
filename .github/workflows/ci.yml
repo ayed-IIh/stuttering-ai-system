@@ -34,9 +34,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt -r requirements-dev.txt
 
-      - name: Remove auto-generated __init__.py files
-        run: find . -name "__init__.py" -not -path "./.venv/*" -not -path "./.git/*" -delete
-
       - name: Run flake8
         run: flake8 ai/ backend/ --config=.flake8
 
