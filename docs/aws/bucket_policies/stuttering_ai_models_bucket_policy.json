@@ -1,0 +1,32 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowModelReadRoleGetObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-model-read-role"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::stuttering-ai-models/*"
+        },
+        {
+            "Sid": "AllowModelReadRoleListBucket",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-model-read-role"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::stuttering-ai-models"
+        },
+        {
+            "Sid": "AllowModelWriteRolePutObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-model-write-role"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::stuttering-ai-models/models/*"
+        }
+    ]
+}

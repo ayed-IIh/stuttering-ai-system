@@ -1,0 +1,37 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowDataPipelinePutObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-data-pipeline-role"
+            },
+            "Action": "s3:PutObject",
+            "Resource": "arn:aws:s3:::stuttering-ai-data/raw/*"
+        },
+        {
+            "Sid": "AllowDataPipelineGetObject",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-data-pipeline-role"
+            },
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::stuttering-ai-data/raw/*"
+        },
+        {
+            "Sid": "AllowDataPipelineListBucket",
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::540034107912:role/stuttering-ai-data-pipeline-role"
+            },
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::stuttering-ai-data",
+            "Condition": {
+                "StringLike": {
+                    "s3:prefix": "raw/*"
+                }
+            }
+        }
+    ]
+}
