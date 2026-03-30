@@ -61,4 +61,6 @@ ai/models/checkpoints/
 
 # Environment files
 .env
+.env.*
+!.env.example
 
