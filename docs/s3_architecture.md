@@ -53,7 +53,7 @@ stuttering-ai-`<purpose>`
 | ------------------------ | ------------------------ | ---------- | ---------------- | ------------- | ------------------------------------ |
 | `stuttering-ai-data`   | Raw & processed datasets | Enabled    | SSE-S3 (AES-256) | Blocked       | None                                 |
 | `stuttering-ai-models` | Trained model artifacts  | Enabled    | SSE-S3 (AES-256) | Blocked       | None                                 |
-| `stuttering-ai-logs`   | Application log archival | Disabled   | SSE-S3 (AES-256) | Blocked       | Transition: Glacier 90d, Expire 365d |
+| `stuttering-ai-logs`   | Application log archival | Enabled    | SSE-S3 (AES-256) | Blocked       | Transition: Glacier 90d, Expire 365d |
 
 > ✅ All buckets are **private**, **encrypted**, and follow **least-privilege policies**.
 
@@ -159,7 +159,7 @@ stuttering-ai-logs/
 | ----------------------- | ------------------------------------- |
 | Access                  | Private                               |
 | Block all public access | ✅ Enabled                            |
-| Versioning              | Disabled                              |
+| Versioning              | Enabled                               |
 | Default encryption      | SSE-S3 (AES-256)                      |
 | Bucket key              | Enabled                               |
 | Object ownership        | Bucket owner enforced (ACLs disabled) |
@@ -173,7 +173,7 @@ stuttering-ai-logs/
 
 **Encryption:** SSE-S3 (AES-256)
 
-**Versioning:** Disabled
+**Versioning:** Enabled
 
 **Lifecycle Rules:**
 
