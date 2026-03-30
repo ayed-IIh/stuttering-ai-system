@@ -1,0 +1,34 @@
+# Full fine-tune: entire Wav2Vec2 encoder is unfrozen.
+# Low learning rate + warmup avoids catastrophic forgetting of pre-trained features.
+# Augmentation is enabled to regularise the larger trainable parameter space.
+
+model:
+  model_name: facebook/wav2vec2-base
+  num_classes: 7
+  freeze_encoder: false
+  dropout_rate: 0.1
+
+training:
+  num_epochs: 20
+  batch_size: 8
+  learning_rate: 2.0e-5
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  gradient_clip_norm: 1.0
+  scheduler_type: linear
+  seed: 42
+  num_workers: 0
+
+data:
+  train_manifest: ai/dataset/processed/train_manifest.csv
+  val_manifest: ai/dataset/processed/val_manifest.csv
+  test_manifest: ai/dataset/processed/test_manifest.csv
+  max_duration_sec: 10.0
+  augmentation_enabled: true
+  target_sr: 16000
+
+output:
+  experiment_name: finetune_full
+  checkpoint_dir: ai/training/checkpoints
+  log_dir: ai/training/logs
+  device: auto

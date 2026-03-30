@@ -1,0 +1,33 @@
+# Baseline experiment: frozen Wav2Vec2 encoder, classification head only.
+# Higher learning rate is appropriate because only the linear head trains.
+
+model:
+  model_name: facebook/wav2vec2-base
+  num_classes: 7
+  freeze_encoder: true
+  dropout_rate: 0.1
+
+training:
+  num_epochs: 10
+  batch_size: 16
+  learning_rate: 1.0e-3
+  warmup_ratio: 0.0
+  weight_decay: 0.01
+  gradient_clip_norm: 1.0
+  scheduler_type: linear
+  seed: 42
+  num_workers: 0
+
+data:
+  train_manifest: ai/dataset/processed/train_manifest.csv
+  val_manifest: ai/dataset/processed/val_manifest.csv
+  test_manifest: ai/dataset/processed/test_manifest.csv
+  max_duration_sec: 10.0
+  augmentation_enabled: false
+  target_sr: 16000
+
+output:
+  experiment_name: baseline_frozen
+  checkpoint_dir: ai/training/checkpoints
+  log_dir: ai/training/logs
+  device: auto
