@@ -1,0 +1,140 @@
+file_path,label,label_id,duration_sec,sample_rate
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_68.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_89.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_98.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_18.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_55.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_16.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_97.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_38.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_21.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU30.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/43.2.wav,part_word_repetition,4,7.0,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_66.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/41.2.wav,prolongations,3,3.35,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_12.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/04.2.wav,blocks,1,3.35,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_61.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFUH01.1.wav,part_word_repetition,4,3.05,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU44.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_70.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU62.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU23.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU31.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/11.2.wav,word_repetition,6,5.4,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU42.2.wav,blocks,1,6.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU05.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_17.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_105.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU38.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU48.2.wav,interjections,2,6.05,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_46.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU48.1.wav,blocks,1,3.95,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU46.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_27.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_23.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU74.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/52.2.wav,part_word_repetition,4,4.700023,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_90.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU35.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/04.1.wav,part_word_repetition,4,3.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU33.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/59.1.wav,part_word_repetition,4,3.5,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU03.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/15.1.wav,part_word_repetition,4,4.1,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_26.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/04.3.wav,part_word_repetition,4,2.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/08.3.wav,part_word_repetition,4,6.5,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU06.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/24.2.wav,prolongations,3,7.2,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_108.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU11.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU18.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/08.2.wav,prolongations,3,1.65,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_84.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU72.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/Audio_09.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU27.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/56.1.wav,prolongations,3,2.2,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_39.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_50.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU36.wav,interjections,2,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU51.1.wav,part_word_repetition,4,2.1,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU32.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU69.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU71.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU52.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_102.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/01.3.wav,fluent,0,3.0,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_100.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU14.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_87.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU53.2.wav,interjections,2,5.15,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_63.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/57.2.wav,prolongations,3,4.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/Audio_51.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU08.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_94.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU59.1.wav,word_repetition,6,6.15,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_25.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU24.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU42.1.wav,part_word_repetition,4,3.25,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_35.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_64.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_101.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU49.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_14.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/07.2.wav,word_repetition,6,4.6,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU20.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU09.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_49.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_31.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/KFHU12.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_109.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU55.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_53.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/56.2.wav,part_word_repetition,4,7.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/07.1.wav,blocks,1,5.45,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_86.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/03.2.wav,blocks,1,5.55,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/KFHU63.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU29.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU65.1.wav,interjections,2,4.05,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU54.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_48.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU64.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU02.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU59.2.wav,part_word_repetition,4,3.9,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/03.1.wav,fluent,0,4.35,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU04.wav,interjections,2,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU39.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_06.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_60.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU56.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/24.1.wav,word_repetition,6,2.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/57.1.wav,word_repetition,6,5.2,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/Audio_71.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/Audio_99.wav,interjections,2,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/41.3.wav,part_word_repetition,4,4.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_65.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU53.1.wav,word_repetition,6,4.45,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/40.1.wav,prolongations,3,5.05,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU68.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU70.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/34.3.wav,interjections,2,2.6,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU10.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/40.2.wav,part_word_repetition,4,5.0,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Word repetition/KFHU26.wav,word_repetition,6,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_05.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_29.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/Audio_91.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Blocks/Audio_37.wav,blocks,1,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/KFHU28.wav,fluent,0,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/08.1.wav,part_word_repetition,4,1.75,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/15.2.wav,prolongations,3,5.9,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Part-word repetition/KFHU21.wav,part_word_repetition,4,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Prolongations/Audio_67.wav,prolongations,3,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Interjections/KFHU37.wav,interjections,2,10.0,16000
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Fluent/02.2.wav,fluent,0,3.8,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Phrase repetition/02.1.wav,phrase_repetition,5,6.25,44100
+/home/ali/projects/stuttering-ai-system/ai/dataset/raw/Repetitions/Phrase repetition/Audio_103.wav,phrase_repetition,5,10.0,16000

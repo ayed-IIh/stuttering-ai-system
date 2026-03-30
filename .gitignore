@@ -42,7 +42,8 @@ Thumbs.db
 # Dataset artifacts (keep lightweight metadata only)
 ai/dataset/raw/
 ai/dataset/interim/
-ai/dataset/processed/
+ai/dataset/processed/*
+!ai/dataset/processed/*_manifest.csv
 *.wav
 *.flac
 *.mp3
