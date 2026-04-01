@@ -1,6 +1,11 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
-from sqlalchemy import String, Text, DateTime, Float, Boolean, Integer, ForeignKey, CheckConstraint, Index
+from sqlalchemy import (
+    String, Text, DateTime,
+    Float, Boolean, Integer,
+    ForeignKey, CheckConstraint,
+    Index, Enum as SQLAlchemyEnum
+)
 from sqlalchemy.sql import func
 from .database import Base
 import uuid
@@ -41,7 +46,10 @@ class Prediction(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     audio_filename: Mapped[str] = mapped_column(String(500))
     audio_duration_sec: Mapped[float] = mapped_column(Float)
-    predicted_class: Mapped[str] = mapped_column(String(50), nullable=False)
+    predicted_class: Mapped[StutterClass] = mapped_column(
+        SQLAlchemyEnum(StutterClass, name="stutterclass", create_type=True),
+        nullable=False
+    )
     confidence_scores: Mapped[dict] = mapped_column(JSONB, nullable=False)
     model_version_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
