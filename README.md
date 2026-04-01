@@ -1,110 +1,153 @@
-# Stuttering AI System
+﻿# Stuttering AI System
 
-An AI-powered system for detecting and analyzing stuttering patterns from speech recordings using machine learning.
+End-to-end stuttering speech classification project with:
+- audio data pipeline
+- model training pipeline (Wav2Vec2-based classifier)
+- backend foundation (FastAPI + PostgreSQL + Docker)
 
-## Current Phase
-- Phase 1 - AI model training (active)
-- Phase 2 - Backend API integration (planned)
-- Phase 3 - Mobile app integration (planned)
+The project predicts 7 classes from `.wav` audio.
 
-## Project Overview
-This repository provides a clean, scalable foundation for training and serving an audio classification model that predicts stuttering type from `.wav` recordings.
+## Label Taxonomy
+Canonical labels live in `shared/labels.py`:
 
-The classification labels are:
-- fluent
-- blocks
-- interjections
-- prolongations
-- part_word_repetition
-- phrase_repetition
-- word_repetition
+| Label | ID |
+|---|---:|
+| fluent | 0 |
+| blocks | 1 |
+| interjections | 2 |
+| prolongations | 3 |
+| part_word_repetition | 4 |
+| phrase_repetition | 5 |
+| word_repetition | 6 |
 
-Canonical mapping is maintained in `shared/labels.py`.
+## Current Implementation Status
+Implemented and merged:
+- Dataset inventory and anomaly audit outputs under `ai/dataset/metadata/`
+- Audio validation script `ai/preprocessing/validate_audio.py`
+- Class distribution analysis artifacts and plots
+- Stratified split manifests under `ai/dataset/processed/`
+- Core audio preprocessing utilities in `ai/preprocessing/audio_loader.py`
+- Dataset class and dataloader integration
+- Training augmentations in `ai/preprocessing/augmentation.py`
+- Wav2Vec2 classifier, training pipeline, config system, checkpoint/export utilities
+- Backend health endpoint (`/health`)
+- PostgreSQL schema/ORM/CRUD foundation
+- Docker local stack and CI workflow
+- S3 architecture and IAM policy documentation
 
-## Tech Stack
-- Python
-- PyTorch
-- Torchaudio
-- HuggingFace Transformers
-- FastAPI
-- PostgreSQL
-- AWS (S3 / EC2 / RDS later)
-
-## Project Goal
-Build an AI system that analyzes speech recordings and classifies different stuttering types.
-
-## AI Architecture
-Pipeline:
-1. Audio (`.wav`)
-2. Audio preprocessing
-3. Feature extraction
-4. Speech encoder (`Wav2Vec2` or `HuBERT`)
-5. Embedding representation
-6. Pooling layer
-7. Classifier head
-8. Stuttering class prediction
-
-Model structure (Phase 1 baseline):
-`Audio -> Wav2Vec2 encoder -> pooling -> classification head -> softmax`
-
-## Dataset Description
-The dataset contains labeled `.wav` files for supervised audio classification.
-
-Suggested organization under `ai/dataset/`:
-- `raw/` for source recordings
-- `interim/` for cleaned/segmented intermediate audio
-- `processed/` for model-ready features and manifests
-- `metadata/` for label maps and split files
+Still in progress for backend serving:
+- Full inference service and `/api/v1/*` prediction routes
+- Backend integration test suite for prediction routes
+- Final model evaluation workflow (`ai/evaluation/evaluate.py`)
 
 ## Repository Structure
 ```text
 stuttering-ai-system/
-|- ai/                              # AI workflows, model code, and evaluation logic
-|  |- dataset/                      # Dataset organization, manifests, splits, and metadata
-|  |- preprocessing/                # Audio loading, normalization, and feature prep utilities
-|  |- training/                     # Training entrypoints, loop orchestration, experiment configs
-|  |- models/                       # Model architectures (Wav2Vec2/HuBERT classifier variants)
-|  `- evaluation/                   # Metrics, reports, confusion matrix, validation scripts
-|- backend/                         # API and service layer for model serving/integration
-|  |- app/                          # FastAPI app initialization and application settings
-|  |- api/                          # Route definitions and request/response schemas
-|  |- services/                     # Inference/business logic layer
-|  `- db/                           # PostgreSQL access, schema, and persistence utilities
-|- shared/                          # Shared constants used by AI and backend (e.g., labels)
-|- scripts/                         # Local automation scripts (data checks, run helpers)
-|- docs/                            # Technical documentation and team guidelines
-|- requirements.txt                 # Python dependency list
-|- .gitignore                       # Ignore rules for datasets, checkpoints, logs, caches
-`- README.md                        # Project entry documentation
+|- ai/
+|  |- dataset/                      # split logic, manifests, metadata
+|  |- preprocessing/                # load/normalize/trim/pad/augment/validate
+|  |- models/                       # stuttering classifier architecture
+|  |- training/                     # train loop, configs, checkpoints, export
+|  `- evaluation/                   # evaluation module (partially pending)
+|- backend/
+|  |- app/                          # FastAPI app entrypoint
+|  |- db/                           # schema, models, CRUD, init
+|  |- api/                          # API route package (scaffolding)
+|  `- services/                     # service layer (scaffolding)
+|- shared/                          # shared taxonomy/constants
+|- scripts/                         # dataset upload/download and utility scripts
+|- docs/                            # architecture and operational docs
+|- tests/                           # unit tests
+|- docker-compose.yml               # base compose stack
+|- docker-compose.dev.yml           # standalone dev compose stack
+|- requirements.txt
+|- requirements-dev.txt
+`- README.md
 ```
 
-## Team Roles
-- Ali - Dataset preparation and dataset pipeline
-  Focus: dataset validation, train/validation split, dataset structure.
-- Adan - AI model development
-  Focus: training pipeline, model experiments, evaluation.
-- Saddouq - AI backend integration
-  Focus: FastAPI backend, inference endpoint, API integration.
-- Wael - Backend and database
-  Focus: database schema, API endpoints, data pipeline.
+## Requirements
+- Python 3.10+
+- Docker Desktop (optional, for containerized local run)
 
-## Development Workflow
-1. Create branch from `dev` using `feature/*` naming.
-2. Implement scoped changes and run checks locally.
-3. Open pull request to `dev`.
-4. Peer review and requested fixes.
-5. Merge to `dev`, then promote to `main` on release.
+Install dependencies:
 
-## Branch Strategy
-- `main`: stable production-ready branch.
-- `dev`: integration branch for reviewed features.
-- `feature/*`: short-lived task branches.
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+```
 
-## Task Management
-Shared sheet columns:
-- Backlog
-- Ready
-- In Progress
-- Review
-- Done
-- Blocked
+## Local Development Run
+Start backend directly:
+
+```bash
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+Check endpoints:
+- `GET /health` -> `{"status":"ok"}`
+- `GET /docs` -> Swagger UI
+
+## Docker Run (Standalone Dev Stack)
+The `docker-compose.dev.yml` file is standalone and can be run directly:
+
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+curl http://127.0.0.1:8000/health
+docker compose -f docker-compose.dev.yml down --remove-orphans
+```
+
+Services:
+- backend: `http://127.0.0.1:8000`
+- postgres: `localhost:5432`
+- pgadmin: `http://127.0.0.1:5050`
+
+## Data and Training Commands
+Validate inventory audio:
+
+```bash
+python ai/preprocessing/validate_audio.py --inventory-csv ai/dataset/metadata/dataset_inventory.csv
+```
+
+Generate stratified manifests:
+
+```bash
+python ai/dataset/split_dataset.py --inventory-csv ai/dataset/metadata/dataset_inventory.csv --output-dir ai/dataset/processed --seed 42
+```
+
+Train baseline model:
+
+```bash
+python ai/training/train.py --config ai/training/configs/baseline_frozen.yaml
+```
+
+Export inference artifacts from checkpoint:
+
+```bash
+python -m ai.training.checkpoint_utils export --checkpoint_path <path_to_checkpoint.pt> --output_dir <output_dir>
+```
+
+## Quality Checks
+Run lint:
+
+```bash
+flake8 ai backend --config=.flake8
+```
+
+Run tests:
+
+```bash
+pytest tests -q
+```
+
+## Key Docs
+- `docs/environments.md`
+- `docs/preprocessing_rules.md`
+- `docs/db_schema.md`
+- `docs/s3_architecture.md`
+- `docs/iam_policies.md`
+- `docs/git_workflow.md`
+- `docs/dataset_versioning.md`
+
+## Branching
+- `main`: stable branch
+- `dev`: integration branch
+- `feature/*`: task branches
