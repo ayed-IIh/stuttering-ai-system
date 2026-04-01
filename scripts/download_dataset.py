@@ -29,10 +29,14 @@ from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-# repo root must be on sys.path so `shared` is importable when run as a script
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from shared.labels import CLASS_LABELS  
+try:
+    from shared.labels import CLASS_LABELS
+except ModuleNotFoundError:
+    # Allow running as a standalone script from outside repo root.
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from shared.labels import CLASS_LABELS
 
 load_dotenv()
 

@@ -28,6 +28,15 @@ from botocore.exceptions import BotoCoreError, ClientError
 from dotenv import load_dotenv
 from tqdm import tqdm
 
+try:
+    from shared.labels import CLASS_LABELS
+except ModuleNotFoundError:
+    # Allow running as a standalone script from outside repo root.
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    from shared.labels import CLASS_LABELS
+
 load_dotenv()
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -35,17 +44,28 @@ load_dotenv()
 BUCKET_DEFAULT = "stuttering-ai-data"
 DATASET_ROOT_DEFAULT = "ai/dataset/raw"
 
-# Local folder path (relative to dataset root) → canonical S3 label.
-# Mirrors TAXONOMY in scripts/audit_dataset.py — keep both in sync if the
-# local folder structure ever changes.
-TAXONOMY: dict[str, str] = {
-    "Fluent":                           "fluent",
-    "Blocks":                           "blocks",
-    "Interjections":                    "interjections",
-    "Prolongations":                    "prolongations",
-    "Repetitions/Part-word repetition": "part_word_repetition",
-    "Repetitions/Phrase repetition":    "phrase_repetition",
-    "Repetitions/Word repetition":      "word_repetition",
+# Canonical class label -> accepted local source directories.
+# Supports both canonical folders and legacy naming from early dataset drops.
+LABEL_SOURCE_DIRS: dict[str, tuple[str, ...]] = {
+    "fluent": ("fluent", "Fluent"),
+    "blocks": ("blocks", "Blocks"),
+    "interjections": ("interjections", "Interjections"),
+    "prolongations": ("prolongations", "Prolongations"),
+    "part_word_repetition": (
+        "part_word_repetition",
+        "repetitions/part_word",
+        "Repetitions/Part-word repetition",
+    ),
+    "phrase_repetition": (
+        "phrase_repetition",
+        "repetitions/phrase",
+        "Repetitions/Phrase repetition",
+    ),
+    "word_repetition": (
+        "word_repetition",
+        "repetitions/word",
+        "Repetitions/Word repetition",
+    ),
 }
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -83,17 +103,35 @@ def already_uploaded(
         raise
 
 
+def collect_local_wavs(dataset_root: Path, label: str) -> list[Path]:
+    """Collect .wav files for one label from canonical and legacy paths."""
+    wavs: list[Path] = []
+    seen: set[str] = set()
+
+    for rel_dir in LABEL_SOURCE_DIRS[label]:
+        src_dir = dataset_root / Path(rel_dir)
+        if not src_dir.is_dir():
+            continue
+
+        for wav in sorted(src_dir.glob("*.wav")):
+            key = str(wav.resolve())
+            if key in seen:
+                continue
+            seen.add(key)
+            wavs.append(wav)
+
+    return wavs
+
+
 def upload_class(
     s3_client,
     bucket: str,
     version: str,
     label: str,
-    local_dir: Path,
+    wavs: list[Path],
     dry_run: bool,
 ) -> tuple[int, int]:
-    wavs = sorted(local_dir.glob("*.wav"))
     if not wavs:
-        logging.warning("no .wav files in %s — skipping", local_dir)
         return 0, 0
 
     uploaded = skipped = 0
@@ -115,12 +153,13 @@ def upload_class(
 def verify_upload(s3_client, bucket: str, version: str) -> dict[str, int]:
     paginator = s3_client.get_paginator("list_objects_v2")
     counts: dict[str, int] = {}
-    for label in TAXONOMY.values():
+    for label in CLASS_LABELS:
         prefix = f"raw/{version}/{label}/"
-        total = sum(
-            page.get("KeyCount", 0)
-            for page in paginator.paginate(Bucket=bucket, Prefix=prefix)
-        )
+        total = 0
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+            for obj in page.get("Contents", []):
+                if not obj["Key"].endswith("/"):
+                    total += 1
         counts[label] = total
     return counts
 
@@ -178,14 +217,14 @@ def main() -> None:
     total_uploaded = total_skipped = 0
     failed: list[str] = []
 
-    for local_rel, label in TAXONOMY.items():
-        local_dir = dataset_root / Path(local_rel)
-        if not local_dir.is_dir():
-            logging.warning("class dir missing, skipping: %s", local_dir)
+    for label in CLASS_LABELS:
+        wavs = collect_local_wavs(dataset_root, label)
+        if not wavs:
+            logging.warning("no local .wav files found for label=%s", label)
             continue
         try:
             up, sk = upload_class(
-                s3, args.bucket, args.version, label, local_dir, args.dry_run
+                s3, args.bucket, args.version, label, wavs, args.dry_run
             )
             total_uploaded += up
             total_skipped += sk
