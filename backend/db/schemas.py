@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, IPvAnyAddress, validator
 from uuid import UUID
 from shared.labels import LABEL2ID
@@ -27,6 +29,7 @@ class PredictionCreate(BaseModel):
     model_version_id: UUID
     processing_time_ms: int
     client_ip: IPvAnyAddress
+    request_id: Optional[UUID] = None
 
     @validator("predicted_class")
     def predicted_class_is_valid(cls, v):
