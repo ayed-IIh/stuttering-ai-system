@@ -1,10 +1,7 @@
-
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-
-
--- Table: model_versions (created first — referenced by predictions FK)
+-- Table: model_versions (created first, referenced by predictions FK)
 CREATE TABLE IF NOT EXISTS model_versions (
     id               UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
     model_name       VARCHAR(100),
@@ -15,7 +12,21 @@ CREATE TABLE IF NOT EXISTS model_versions (
     notes            TEXT
 );
 
-
+-- Enum type for normalized predicted_class values
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'stutterclass') THEN
+        CREATE TYPE stutterclass AS ENUM (
+            'fluent',
+            'blocks',
+            'interjections',
+            'prolongations',
+            'part_word_repetition',
+            'phrase_repetition',
+            'word_repetition'
+        );
+    END IF;
+END$$;
 
 -- Table: predictions
 CREATE TABLE IF NOT EXISTS predictions (
@@ -23,19 +34,15 @@ CREATE TABLE IF NOT EXISTS predictions (
     created_at           TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     audio_filename       VARCHAR(500),
     audio_duration_sec   FLOAT,
-    predicted_class      VARCHAR(50)   NOT NULL,
-
+    predicted_class      stutterclass  NOT NULL,
     confidence_scores    JSONB         NOT NULL,
-
     model_version_id     UUID          NOT NULL,
     processing_time_ms   INTEGER,
     client_ip            INET,
     request_id           UUID          NOT NULL UNIQUE
 );
 
-
-
--- Foreign Key: predictions → model_versions
+-- Foreign Key: predictions -> model_versions
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -50,8 +57,6 @@ BEGIN
     END IF;
 END$$;
 
-
-
 -- Helper function: counts keys in a JSONB object.
 CREATE OR REPLACE FUNCTION jsonb_key_count(j JSONB)
 RETURNS INTEGER
@@ -62,7 +67,7 @@ AS $$
 $$;
 
 -- Check constraint: confidence_scores must contain exactly
--- the 7 class keys and no others with FLOAT values in [0.0, 1.0]
+-- the 7 class keys and no others.
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -87,31 +92,7 @@ BEGIN
     END IF;
 END$$;
 
--- Check constraint: predicted_class must be one of the known classes
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'chk_predicted_class'
-    ) THEN
-        ALTER TABLE predictions
-            ADD CONSTRAINT chk_predicted_class
-            CHECK (
-                predicted_class IN (
-                    'fluent',
-                    'blocks',
-                    'interjections',
-                    'prolongations',
-                    'part_word_repetition',
-                    'phrase_repetition',
-                    'word_repetition'
-                )
-            );
-    END IF;
-END$$;
-
-
--- Indexes 
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_predictions_created_at
     ON predictions (created_at);
 

@@ -20,6 +20,7 @@ dist/
 
 # Test and coverage
 .pytest_cache/
+tests/temp/
 .coverage
 .coverage.*
 htmlcov/
