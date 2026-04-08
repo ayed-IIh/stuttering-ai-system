@@ -428,7 +428,7 @@ class ModelService:
         if channels > 1:
             mono: list[float] = []
             for i in range(0, len(samples), channels):
-                frame = samples[i : i + channels]
+                frame = samples[i:i + channels]
                 if not frame:
                     continue
                 mono.append(sum(frame) / float(len(frame)))
