@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from shared.labels import CLASS_LABELS
 
 # Repo root (parent of ``backend/``)
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -50,18 +51,11 @@ def _stub_librosa() -> None:
 _stub_async_engine()
 _stub_librosa()
 
-from backend.api.routes import health, router
-from backend.app.config import Settings, clear_settings_cache
-from backend.app.middleware import RequestLoggingMiddleware, register_exception_handlers
-from backend.db.database import get_db
-from backend.services.model_service import InvalidAudioError
-from shared.labels import CLASS_LABELS, NUM_CLASSES
-
 
 class MockModelService:
     """Fixed prediction for any decodable WAV; raises ``InvalidAudioError`` for corrupt audio."""
 
-    def __init__(self, settings: Settings | None = None) -> None:
+    def __init__(self, settings: Any = None) -> None:
         self._settings = settings
 
     async def load(self) -> None:
@@ -71,6 +65,8 @@ class MockModelService:
         return True
 
     def predict(self, audio_bytes: bytes) -> dict[str, Any]:
+        from backend.services.model_service import InvalidAudioError
+
         try:
             with wave.open(BytesIO(audio_bytes), "rb") as wav_file:
                 wav_file.readframes(min(64, wav_file.getnframes()))
@@ -91,7 +87,9 @@ class MockModelService:
 
 
 @pytest.fixture
-def test_settings() -> Settings:
+def test_settings() -> Any:
+    from backend.app.config import Settings, clear_settings_cache
+
     clear_settings_cache()
     return Settings(
         MODEL_PATH="",
@@ -107,7 +105,11 @@ def test_settings() -> Settings:
 
 
 @pytest.fixture
-def test_app(test_settings: Settings) -> FastAPI:
+def test_app(test_settings: Any) -> FastAPI:
+    from backend.api.routes import health, router
+    from backend.app.middleware import RequestLoggingMiddleware, register_exception_handlers
+    from backend.db.database import get_db
+
     app = FastAPI(title="Stuttering AI API (integration tests)")
     app.state.settings = test_settings
     app.state.model_service = MockModelService(test_settings)
