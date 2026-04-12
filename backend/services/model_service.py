@@ -14,14 +14,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
-import torchaudio
-import torchaudio.functional as TAF
-
-from ai.preprocessing.audio_loader import (
-    TARGET_DURATION_SEC,
-    normalize_waveform,
-    pad_or_truncate,
-)
 from backend.app.config import Settings
 from shared.labels import CLASS_LABELS
 
@@ -88,50 +80,20 @@ class _FallbackClassifier:
         return {"logits": logits}
 
 
-def _model_block(cfg: dict[str, Any]) -> dict[str, Any]:
-    m = cfg.get("model")
-    if isinstance(m, dict) and m:
-        return m
-    return cfg
-
-
-def _data_block(cfg: dict[str, Any]) -> dict[str, Any]:
-    d = cfg.get("data")
-    return d if isinstance(d, dict) else {}
-
-
-def _training_block(cfg: dict[str, Any]) -> dict[str, Any]:
-    t = cfg.get("training")
-    return t if isinstance(t, dict) else {}
-
-
-def _state_dict_from_inference_payload(raw: Any) -> dict[str, Any] | None:
-    if not isinstance(raw, dict):
-        return None
-    if "model_state_dict" in raw:
-        sd = raw["model_state_dict"]
-        return sd if isinstance(sd, dict) else None
-    if "state_dict" in raw:
-        sd = raw["state_dict"]
-        return sd if isinstance(sd, dict) else None
-    return None
-
-
 class ModelService:
-    """Load ADN-04 inference artifacts and run thread-safe Wav2Vec2 inference."""
+    """Model loader and thread-safe predictor for stuttering inference."""
 
-    def __init__(self, config: Settings) -> None:
-        """Initialize from app settings (pydantic ``Settings`` — the service ``config``)."""
-        self._settings = config
+    def __init__(self, settings: Settings) -> None:
+        self._settings = settings
         self._model: Any = None
         self._processor: Any = None
         self._loaded = False
         self._predict_lock = threading.Lock()
-        self._model_version = config.SERVICE_VERSION
+        self._model_version = settings.SERVICE_VERSION
         self._model_config: dict[str, Any] = {}
         self._class_names: list[str] = list(CLASS_LABELS)
-        self._target_sample_rate = 16_000
-        self._max_duration_sec = float(TARGET_DURATION_SEC)
+        self._target_sample_rate = 16000
+        self._max_samples = self._target_sample_rate * 5
         self._load_sync()
 
     def is_loaded(self) -> bool:
@@ -142,7 +104,7 @@ class ModelService:
         return self._model_version if self._loaded else "unknown"
 
     async def load(self) -> None:
-        """Async hook for lifespan; sync load already ran in ``__init__``."""
+        """Kept for app lifespan compatibility; __init__ already loads synchronously."""
         if self._loaded:
             return
         loop = asyncio.get_running_loop()
@@ -167,21 +129,13 @@ class ModelService:
 
         self._model_config = self._read_json_config(config_path)
         self._class_names = self._extract_class_names(self._model_config)
-        data_cfg = _data_block(self._model_config)
         self._target_sample_rate = int(
-            data_cfg.get("target_sr")
-            or self._model_config.get("target_sample_rate")
-            or self._model_config.get("sample_rate")
-            or 16_000
+            self._model_config.get("target_sample_rate", self._model_config.get("sample_rate", 16000))
         )
-        self._max_duration_sec = float(
-            data_cfg.get("max_duration_sec")
-            or self._model_config.get("max_duration_sec")
-            or TARGET_DURATION_SEC
+        self._max_samples = int(
+            self._model_config.get("max_samples", self._target_sample_rate * 5)
         )
-        self._model_version = str(
-            self._model_config.get("model_version", self._settings.SERVICE_VERSION)
-        )
+        self._model_version = str(self._model_config.get("model_version", self._settings.SERVICE_VERSION))
         self._processor = self._load_processor(self._model_config)
         self._model = self._load_model(model_path, self._model_config)
         self._loaded = True
@@ -202,24 +156,15 @@ class ModelService:
             raise ModelNotLoadedError(f"Failed to parse config.json: {exc}") from exc
 
     def _extract_class_names(self, cfg: dict[str, Any]) -> list[str]:
-        label2id = cfg.get("label2id")
-        if isinstance(label2id, dict) and label2id:
-            pairs = sorted(label2id.items(), key=lambda x: int(x[1]))
-            return [str(k) for k, _ in pairs]
-        for key in ("class_names", "labels", "classes"):
+        keys = ("class_names", "labels", "classes")
+        for key in keys:
             value = cfg.get(key)
-            if isinstance(value, list) and value:
-                return [str(v) for v in value]
-        mb = _model_block(cfg)
-        for key in ("class_names", "labels", "classes"):
-            value = mb.get(key)
             if isinstance(value, list) and value:
                 return [str(v) for v in value]
         return list(self._class_names)
 
     def _load_processor(self, cfg: dict[str, Any]) -> Any:
-        mb = _model_block(cfg)
-        model_name = str(mb.get("model_name", cfg.get("model_name", ""))).strip()
+        model_name = str(cfg.get("model_name", "")).strip()
         if not model_name:
             if self._settings.PRODUCTION_MODE:
                 raise ModelNotLoadedError("config.json is missing required field 'model_name'")
@@ -241,11 +186,11 @@ class ModelService:
                 raise ModelNotLoadedError("torch is not installed; cannot load model_inference.pt")
             return _FallbackClassifier(num_classes=len(self._class_names)).eval()
 
-        model: Any = self._try_load_stuttering_classifier(model_path, cfg)
-        if model is None:
-            classifier_class = cfg.get("classifier_class")
-            if isinstance(classifier_class, str) and classifier_class.strip():
-                model = self._rebuild_classifier(classifier_class, cfg, model_path)
+        model: Any = None
+        classifier_class = cfg.get("classifier_class")
+        if isinstance(classifier_class, str) and classifier_class.strip():
+            model = self._rebuild_classifier(classifier_class, cfg, model_path)
+
         if model is None:
             model = self._load_torchscript(model_path)
         if model is None:
@@ -253,61 +198,10 @@ class ModelService:
                 raise ModelNotLoadedError(f"Unable to reconstruct model from {model_path}")
             model = _FallbackClassifier(num_classes=len(self._class_names))
 
-        device = self._settings.DEVICE
         if hasattr(model, "to"):
-            model = model.to(device)
+            model = model.to(self._settings.DEVICE)
         if hasattr(model, "eval"):
             model.eval()
-        return model
-
-    def _try_load_stuttering_classifier(self, model_path: Path, cfg: dict[str, Any]) -> Any:
-        if torch is None:
-            return None
-        try:
-            from ai.models.stuttering_classifier import ModelConfig, StutteringClassifier
-        except Exception:
-            return None
-
-        mb = _model_block(cfg)
-        if not mb.get("model_name"):
-            return None
-
-        tr = _training_block(cfg)
-        try:
-            mc = ModelConfig(
-                model_name=str(mb["model_name"]),
-                num_classes=int(mb.get("num_classes", len(self._class_names))),
-                dropout_rate=float(mb.get("dropout_rate", 0.1)),
-                freeze_encoder=bool(mb.get("freeze_encoder", True)),
-                learning_rate=float(tr.get("learning_rate", mb.get("learning_rate", 1e-4))),
-            )
-            model = StutteringClassifier(mc)
-        except Exception:
-            return None
-
-        try:
-            raw = torch.load(model_path, map_location="cpu", weights_only=False)
-        except Exception:
-            return None
-        if not isinstance(raw, dict):
-            return None
-
-        sd = raw.get("model_state_dict") or raw.get("state_dict")
-        if sd is None:
-            if any(k in raw for k in ("optimizer_state_dict", "epoch", "best_val_loss")):
-                return None
-            sd = raw
-        if not isinstance(sd, dict):
-            return None
-
-        try:
-            model.load_state_dict(sd, strict=True)
-        except Exception:
-            try:
-                model.load_state_dict(sd, strict=False)
-            except Exception:
-                return None
-
         return model
 
     def _rebuild_classifier(self, dotted_path: str, cfg: dict[str, Any], model_path: Path) -> Any:
@@ -319,15 +213,10 @@ class ModelService:
             classifier_cls = getattr(module, class_name)
             init_args = cfg.get("model_init_args", {})
             model = classifier_cls(**init_args)
-            checkpoint = torch.load(model_path, map_location=self._settings.DEVICE, weights_only=False)
-            if isinstance(checkpoint, dict):
-                sd = _state_dict_from_inference_payload(checkpoint)
-                if sd is None:
-                    sd = checkpoint.get("state_dict", checkpoint)
-            else:
-                sd = checkpoint
-            if hasattr(model, "load_state_dict") and isinstance(sd, dict):
-                model.load_state_dict(sd)
+            checkpoint = torch.load(model_path, map_location=self._settings.DEVICE)
+            state_dict = checkpoint.get("state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
+            if hasattr(model, "load_state_dict"):
+                model.load_state_dict(state_dict)
             return model
         except Exception:
             return None
@@ -365,8 +254,9 @@ class ModelService:
         started_at = time.perf_counter()
         with self._predict_lock:
             try:
-                waveform = self._decode_and_preprocess_wav(audio_bytes)
-                inputs = self._prepare_inputs(waveform)
+                waveform, sample_rate = self._decode_wav_bytes(audio_bytes)
+                processed = self._preprocess_waveform(waveform, sample_rate)
+                inputs = self._prepare_inputs(processed)
                 outputs = self._forward(inputs)
                 probs = self._softmax(outputs)
                 predicted_idx = max(range(len(probs)), key=lambda i: probs[i])
@@ -385,35 +275,9 @@ class ModelService:
             except Exception as exc:
                 raise PredictionError(f"Inference failed: {exc}") from exc
 
-    def _decode_and_preprocess_wav(self, audio_bytes: bytes) -> Any:
-        """Decode WAV bytes and apply the same core steps as ``audio_loader.load_audio`` (inference: no trim)."""
+    def _decode_wav_bytes(self, audio_bytes: bytes) -> tuple[Any, int]:
         if not audio_bytes:
             raise InvalidAudioError("Audio payload is empty")
-
-        if torch is None:
-            return self._decode_wav_bytes_wave_only(audio_bytes)
-
-        try:
-            waveform, native_sr = torchaudio.load(io.BytesIO(audio_bytes), format="wav")
-        except Exception as exc:
-            raise InvalidAudioError(f"Invalid or undecodable WAV: {exc}") from exc
-
-        waveform = waveform.to(torch.float32)
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(dim=0, keepdim=True)
-
-        target_sr = self._target_sample_rate
-        if int(native_sr) != target_sr:
-            waveform = TAF.resample(waveform, orig_freq=int(native_sr), new_freq=target_sr)
-
-        waveform = normalize_waveform(waveform, method="peak")
-        waveform = pad_or_truncate(
-            waveform, sr=target_sr, max_duration_sec=self._max_duration_sec
-        )
-        return waveform.to(torch.float32)
-
-    def _decode_wav_bytes_wave_only(self, audio_bytes: bytes) -> Any:
-        """Fallback when torch is unavailable (tests / minimal env)."""
         try:
             with wave.open(io.BytesIO(audio_bytes), "rb") as wav_file:
                 sample_rate = wav_file.getframerate()
@@ -433,6 +297,10 @@ class ModelService:
                     continue
                 mono.append(sum(frame) / float(len(frame)))
             samples = mono
+
+        if torch is not None:
+            tensor = torch.tensor(samples, dtype=torch.float32).unsqueeze(0)
+            return tensor, sample_rate
         return samples, sample_rate
 
     def _pcm_to_floats(self, raw: bytes, sample_width: int) -> list[float]:
@@ -448,47 +316,81 @@ class ModelService:
             return [v / 2147483648.0 for v in values]
         raise InvalidAudioError(f"Unsupported WAV sample width: {sample_width}")
 
+    def _preprocess_waveform(self, waveform: Any, sample_rate: int) -> Any:
+        resampled = self._resample(waveform, sample_rate, self._target_sample_rate)
+        normalized = self._normalize(resampled)
+        return self._pad_or_truncate(normalized, self._max_samples)
+
+    def _resample(self, waveform: Any, source_rate: int, target_rate: int) -> Any:
+        if source_rate == target_rate:
+            return waveform
+        if torch is not None and torch.is_tensor(waveform):
+            try:
+                import torchaudio.functional as TAF
+
+                return TAF.resample(waveform, source_rate, target_rate)
+            except Exception:
+                # Fallback linear interpolation if torchaudio isn't available.
+                import torch.nn.functional as F
+
+                x = waveform.unsqueeze(0)
+                target_len = max(1, int(waveform.shape[-1] * (target_rate / float(source_rate))))
+                y = F.interpolate(x, size=target_len, mode="linear", align_corners=False)
+                return y.squeeze(0)
+        target_len = max(1, int(len(waveform) * (target_rate / float(source_rate))))
+        if target_len == len(waveform):
+            return waveform
+        output: list[float] = []
+        scale = (len(waveform) - 1) / float(max(1, target_len - 1))
+        for i in range(target_len):
+            src_pos = i * scale
+            left = int(math.floor(src_pos))
+            right = min(left + 1, len(waveform) - 1)
+            alpha = src_pos - left
+            output.append((1 - alpha) * waveform[left] + alpha * waveform[right])
+        return output
+
+    def _normalize(self, waveform: Any) -> Any:
+        if torch is not None and torch.is_tensor(waveform):
+            peak = torch.max(torch.abs(waveform))
+            if float(peak) > 0:
+                return waveform / peak
+            return waveform
+        peak = max((abs(x) for x in waveform), default=0.0)
+        if peak <= 0:
+            return waveform
+        return [x / peak for x in waveform]
+
+    def _pad_or_truncate(self, waveform: Any, max_samples: int) -> Any:
+        if torch is not None and torch.is_tensor(waveform):
+            curr = waveform.shape[-1]
+            if curr > max_samples:
+                return waveform[..., :max_samples]
+            if curr < max_samples:
+                pad = max_samples - curr
+                return torch.nn.functional.pad(waveform, (0, pad))
+            return waveform
+        curr = len(waveform)
+        if curr > max_samples:
+            return waveform[:max_samples]
+        if curr < max_samples:
+            return waveform + ([0.0] * (max_samples - curr))
+        return waveform
+
     def _prepare_inputs(self, waveform: Any) -> dict[str, Any]:
         processor = self._processor
         if processor is None:
             raise ModelNotLoadedError("Wav2Vec2Processor is not initialized")
-
         if torch is not None and torch.is_tensor(waveform):
             values = waveform.squeeze(0).detach().cpu().tolist()
-            inputs = processor(
-                values,
-                sampling_rate=self._target_sample_rate,
-                return_tensors="pt",
-                padding=True,
-            )
-        elif isinstance(waveform, tuple):
-            samples, sr = waveform
-            if torch is not None:
-                tensor = torch.tensor(samples, dtype=torch.float32).unsqueeze(0)
-                tensor = normalize_waveform(tensor, method="peak")
-                tensor = pad_or_truncate(
-                    tensor, sr=int(sr), max_duration_sec=self._max_duration_sec
-                )
-                values = tensor.squeeze(0).tolist()
-                sr = int(sr)
-            else:
-                values = samples
-                sr = int(sr)
-            inputs = processor(
-                values,
-                sampling_rate=sr,
-                return_tensors="pt",
-                padding=True,
-            )
         else:
             values = waveform
-            inputs = processor(
-                values,
-                sampling_rate=self._target_sample_rate,
-                return_tensors="pt",
-                padding=True,
-            )
-
+        inputs = processor(
+            values,
+            sampling_rate=self._target_sample_rate,
+            return_tensors="pt",
+            padding=True,
+        )
         if not isinstance(inputs, dict):
             raise PredictionError("Processor returned invalid payload")
         if torch is not None:
