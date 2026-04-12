@@ -138,6 +138,12 @@ Run tests:
 pytest tests -q
 ```
 
+Run pre-data readiness checks (smoke + integration + training sanity):
+
+```bash
+python scripts/pre_data_readiness.py
+```
+
 ## Key Docs
 - `docs/environments.md`
 - `docs/preprocessing_rules.md`
@@ -146,6 +152,7 @@ pytest tests -q
 - `docs/iam_policies.md`
 - `docs/git_workflow.md`
 - `docs/dataset_versioning.md`
+- `docs/pre_data_readiness.md`
 
 ## Branching
 - `main`: stable branch
