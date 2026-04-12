@@ -11,6 +11,7 @@ import argparse
 import random
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -143,19 +144,21 @@ def _validate(model: StutteringClassifier, loader, device: torch.device) -> tupl
     return mean_loss, acc, macro_f1
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Train StutteringClassifier (Wav2Vec2).")
-    parser.add_argument(
-        "--config",
-        type=str,
-        required=True,
-        help="Path to YAML config (paths resolved relative to current working directory).",
-    )
-    args = parser.parse_args()
+def run_training(
+    raw: dict[str, Any],
+    *,
+    cwd: Path | None = None,
+    config_path: Path | None = None,
+    verbose: bool = True,
+) -> dict[str, Any]:
+    """
+    Run training from an in-memory config dict (same schema as YAML training configs).
 
-    config_path = Path(args.config).resolve()
-    cwd = Path.cwd().resolve()
-    raw = _load_config(config_path)
+    Returns best validation macro-F1 observed, validation loss at that epoch, and
+    the experiment name used for checkpoints/logs.
+    """
+    if cwd is None:
+        cwd = Path.cwd().resolve()
 
     data_cfg = raw["data"]
     output_cfg = raw["output"]
@@ -244,7 +247,9 @@ def main() -> None:
 
     best_f1 = -1.0
     best_val_loss = float("inf")
+    best_val_loss_at_best_f1 = float("inf")
     epoch = 0
+    extra_cfg = {"config_path": str(config_path)} if config_path is not None else {}
 
     try:
         for epoch in range(1, num_epochs + 1):
@@ -295,6 +300,7 @@ def main() -> None:
 
             if val_macro_f1 > best_f1:
                 best_f1 = val_macro_f1
+                best_val_loss_at_best_f1 = val_loss
                 save_best_checkpoint(
                     best_model_path,
                     model,
@@ -306,18 +312,19 @@ def main() -> None:
                     epoch=epoch,
                     config=raw,
                     label2id=dict(LABEL2ID),
-                    extra={"config_path": str(config_path)},
+                    extra=extra_cfg,
                 )
 
-            print(
-                f"Epoch {epoch}/{num_epochs} | "
-                f"train_loss={train_loss:.4f} | "
-                f"val_loss={val_loss:.4f} | "
-                f"val_accuracy={val_acc:.4f} | "
-                f"val_macro_f1={val_macro_f1:.4f} | "
-                f"lr={lr_now:.2e} | "
-                f"best_val_macro_f1={best_f1:.4f}"
-            )
+            if verbose:
+                print(
+                    f"Epoch {epoch}/{num_epochs} | "
+                    f"train_loss={train_loss:.4f} | "
+                    f"val_loss={val_loss:.4f} | "
+                    f"val_accuracy={val_acc:.4f} | "
+                    f"val_macro_f1={val_macro_f1:.4f} | "
+                    f"lr={lr_now:.2e} | "
+                    f"best_val_macro_f1={best_f1:.4f}"
+                )
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt: saving checkpoint before exit...", flush=True)
         save_last_checkpoint(
@@ -333,6 +340,28 @@ def main() -> None:
             label2id=dict(LABEL2ID),
         )
         raise SystemExit(130) from None
+
+    return {
+        "best_val_macro_f1": float(best_f1),
+        "val_loss_at_best_f1": float(best_val_loss_at_best_f1),
+        "experiment_name": experiment_name,
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Train StutteringClassifier (Wav2Vec2).")
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to YAML config (paths resolved relative to current working directory).",
+    )
+    args = parser.parse_args()
+
+    config_path = Path(args.config).resolve()
+    cwd = Path.cwd().resolve()
+    raw = _load_config(config_path)
+    run_training(raw, cwd=cwd, config_path=config_path, verbose=True)
 
 
 if __name__ == "__main__":
