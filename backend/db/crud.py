@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import logging
 import uuid
@@ -8,10 +8,27 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import Prediction
+from .models import ModelVersion, Prediction
 from .schemas import PredictionCreate
 
 logger = logging.getLogger(__name__)
+
+
+async def get_model_version_id_by_label(
+    db: AsyncSession, model_version: str
+) -> Optional[uuid.UUID]:
+    """Resolve ``model_versions.id`` from the string label (e.g. ``0.1.0``)."""
+    try:
+        result = await db.execute(
+            select(ModelVersion.id)
+            .where(ModelVersion.model_version == model_version)
+            .order_by(ModelVersion.deployed_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()
+    except SQLAlchemyError as e:
+        logger.warning("Could not resolve model_version_id for %r: %s", model_version, e)
+        return None
 
 
 async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Prediction:
