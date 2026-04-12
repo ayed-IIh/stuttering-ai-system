@@ -1,4 +1,4 @@
-﻿# Python bytecode and cache
+# Python bytecode and cache
 __pycache__/
 *.py[cod]
 *$py.class
@@ -46,6 +46,7 @@ ai/dataset/interim/
 ai/dataset/processed/*
 !ai/dataset/processed/*_manifest.csv
 *.wav
+!backend/tests/fixtures/*.wav
 *.flac
 *.mp3
 
