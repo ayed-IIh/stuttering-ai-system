@@ -4,6 +4,8 @@ import json
 from functools import lru_cache
 from typing import Any, Literal
 
+from anyio import Path
+from fastapi import logger
 from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -23,6 +25,16 @@ class Settings(BaseSettings):
         description="Filesystem path to model artifact or local cache path for S3-backed models.",
     )
     MODEL_SOURCE: Literal["local", "s3"] = "local"
+
+    MODEL_VERSION: str = Field(
+        default="",
+        description="S3 artifact version to download, e.g. v1.0. Required when MODEL_SOURCE='s3'.",
+    )
+    MODEL_CACHE_DIR: str = Field(
+        default="/tmp/model_cache",
+        description="Local directory where S3 artifacts are cached after download.",
+    )
+
     DEVICE: Literal["cpu", "cuda"] = "cpu"
     MAX_AUDIO_SIZE_MB: int = 10
     # Stored as str so env / .env can use comma-separated values (pydantic-settings JSON-decodes list fields).
@@ -82,6 +94,15 @@ class Settings(BaseSettings):
             )
         return self
 
+    @model_validator(mode="after")
+    def validate_s3_fields(self) -> Settings:
+        if self.MODEL_SOURCE == "s3" and not self.MODEL_VERSION.strip():
+            raise ValueError(
+                "MODEL_VERSION is required when MODEL_SOURCE='s3'. "
+                "Set it in .env or as an environment variable."
+            )
+        return self
+
     @property
     def cors_allowed_origins(self) -> list[str]:
         """Origins passed to CORSMiddleware (never `['*']` in production)."""
@@ -92,6 +113,59 @@ class Settings(BaseSettings):
     @property
     def max_audio_size_bytes(self) -> int:
         return self.MAX_AUDIO_SIZE_MB * 1024 * 1024
+
+    @property
+    def resolved_model_path(self) -> Path:
+        """
+        Returns the local path where model_inference.pt lives.
+
+        For local source: returns MODEL_PATH directly.
+        For S3 source:    returns the cache dir where download_model pulled the artifact.
+        """
+        if self.MODEL_SOURCE == "s3":
+            return Path(self.MODEL_CACHE_DIR) / self.MODEL_VERSION
+        return Path(self.MODEL_PATH)
+
+
+def download_model_if_needed(settings: Settings) -> None:
+    """
+    Pull model artifacts from S3 into the local cache if they aren't there yet.
+
+    This reuses the same download + hash-verification logic from
+    scripts/download_model.py so there's no duplicated S3 code.
+    Skips the download entirely when MODEL_SOURCE='local'.
+    """
+    if settings.MODEL_SOURCE != "s3":
+        return
+
+    # Import here to avoid a hard boto3 dependency when running locally
+    from scripts.download_model import download_and_verify
+    import boto3
+
+    cache_path = Path(settings.MODEL_CACHE_DIR) / settings.MODEL_VERSION
+
+    # Already cached — check if both files are present before skipping
+    artifacts_present = all(
+        (cache_path / f).exists()
+        for f in ["model_inference.pt", "config.json"]
+    )
+    if artifacts_present:
+        logger.info(
+            "Model artifacts already cached at %s — skipping S3 download.", cache_path
+        )
+        return
+
+    logger.info(
+        "MODEL_SOURCE=s3 — downloading version '%s' from S3 into %s",
+        settings.MODEL_VERSION,
+        cache_path,
+    )
+
+    s3_client = boto3.client("s3")
+    # download_and_verify handles mkdir, download, and MD5 check
+    download_and_verify(s3_client, settings.MODEL_VERSION, cache_path)
+
+    logger.info("S3 model artifacts ready at %s", cache_path)
 
 
 @lru_cache

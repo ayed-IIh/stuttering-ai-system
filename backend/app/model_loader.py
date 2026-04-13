@@ -19,7 +19,6 @@ import hashlib
 import json
 import logging
 import os
-import tempfile
 from pathlib import Path
 from typing import Any
 from dotenv import load_dotenv
