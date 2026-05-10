@@ -120,6 +120,10 @@ def test_predict_fallback_three_wav_files(fallback_settings: Settings, three_wav
         assert isinstance(out["all_scores"], dict)
         assert set(out["all_scores"].keys()) == set(CLASS_LABELS)
         assert len(out["all_scores"]) == NUM_CLASSES
+        # Every score is an independent sigmoid probability in [0, 1].
+        for score in out["all_scores"].values():
+            assert isinstance(score, (int, float))
+            assert 0.0 <= float(score) <= 1.0
         # predicted_classes is a (possibly empty) list of {class, confidence}.
         assert isinstance(out["predicted_classes"], list)
         for entry in out["predicted_classes"]:
