@@ -4,6 +4,16 @@ Dataset Split — stuttering-ai-system
 Reads dataset_inventory.csv and produces stratified train/val/test manifests
 at a 70/15/15 ratio across all 7 stuttering classes.
 
+Manifest schema (v2 — multi-label-ready):
+    file_path, labels, duration_sec, sample_rate
+
+``labels`` is a comma-separated string of class names from
+``shared.labels.CLASS_LABELS``. The current inventory carries one class per
+clip, so each row will have a single token in ``labels`` for now; the
+producer will emit multi-token strings once the client's re-labeling pass
+ships. Downstream readers (``stuttering_dataset.py`` / ``dataloader.py``)
+already accept the multi-token format.
+
 Classes with fewer than MIN_SAMPLES_FOR_SPLIT samples are forced into the
 training set entirely (currently: phrase_repetition, 2 samples).
 
@@ -23,27 +33,22 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import sys
 from pathlib import Path
 
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit, StratifiedShuffleSplit
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from shared.labels import CLASS_LABELS  # noqa: E402
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "2.0.0"
 RANDOM_SEED = 42
-
-# Keep in sync with STUTTERING_CLASSES in ai/models/stuttering_classifier.py
-LABEL_TO_ID: dict[str, int] = {
-    "fluent": 0,
-    "blocks": 1,
-    "interjections": 2,
-    "prolongations": 3,
-    "part_word_repetition": 4,
-    "phrase_repetition": 5,
-    "word_repetition": 6,
-}
-assert len(LABEL_TO_ID) == 7, "LABEL_TO_ID must have exactly 7 entries"
 
 # floor(0.15 * n) >= 1 requires n >= 7; below this the second-pass split breaks
 MIN_SAMPLES_FOR_SPLIT = 7
@@ -82,7 +87,8 @@ def load_inventory(csv_path: Path) -> pd.DataFrame:
 
 
 def validate_label_coverage(df: pd.DataFrame) -> None:
-    unknown = set(df["class_label"].unique()) - LABEL_TO_ID.keys()
+    """Raise if the inventory contains any class names outside CLASS_LABELS."""
+    unknown = set(df["class_label"].unique()) - set(CLASS_LABELS)
     if unknown:
         raise ValueError(f"Unknown class labels in inventory: {sorted(unknown)}")
 
@@ -167,11 +173,17 @@ def split_dataset(
 
 
 def build_manifest(df: pd.DataFrame) -> pd.DataFrame:
+    """Build the v2 multi-label manifest from a filtered inventory frame.
+
+    Returns:
+        DataFrame with columns ``file_path``, ``labels`` (comma-separated
+        class names; currently always one token per row), ``duration_sec``,
+        ``sample_rate``.
+    """
     return pd.DataFrame(
         {
             "file_path": df["absolute_path"].values,
-            "label": df["class_label"].values,
-            "label_id": df["class_label"].map(LABEL_TO_ID).values,
+            "labels": df["class_label"].values,
             "duration_sec": df["duration_seconds"].values,
             "sample_rate": df["sample_rate_hz"].values,
         }
@@ -181,15 +193,21 @@ def build_manifest(df: pd.DataFrame) -> pd.DataFrame:
 def print_split_distribution(
     train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame
 ) -> None:
-    all_labels = sorted(LABEL_TO_ID.keys())
-    forced = set(train["label"]) - set(val["label"]) - set(test["label"])
+    """Pretty-print per-class row counts across train/val/test.
+
+    Assumes single-token ``labels`` cells (inventory invariant). When the
+    multi-label re-labeling pass ships, this will need a ``str.contains``
+    / ``str.split`` rewrite — flagged here for the migration.
+    """
+    all_labels = sorted(CLASS_LABELS)
+    forced = set(train["labels"]) - set(val["labels"]) - set(test["labels"])
 
     # collect per-label counts
     rows = []
     for lbl in all_labels:
-        tr = (train["label"] == lbl).sum()
-        v = (val["label"] == lbl).sum()
-        te = (test["label"] == lbl).sum()
+        tr = (train["labels"] == lbl).sum()
+        v = (val["labels"] == lbl).sum()
+        te = (test["labels"] == lbl).sum()
         rows.append((lbl, tr, v, te))
 
     w = max(len(lbl) for lbl in all_labels) + 2

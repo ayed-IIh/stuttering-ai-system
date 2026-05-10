@@ -81,4 +81,33 @@ ALTER TABLE predictions
 --    so a re-run on a partially migrated DB doesn't error.
 DROP INDEX IF EXISTS idx_predictions_predicted_class;
 
+-- 7. Rename ``confidence_scores`` → ``all_scores`` so the column name matches
+--    the v2.0 wire field name (see docs/api_contract.md). The 7-key CHECK
+--    constraint (``chk_confidence_scores_keys``) is dropped because the
+--    in-app PredictionResponse.field_validator already enforces the same
+--    invariant, and routes.py only writes via the parameterized INSERT —
+--    bypassing free-form JSON edits. Guard the rename so the migration is
+--    idempotent across already-migrated databases.
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'predictions' AND column_name = 'confidence_scores'
+    ) THEN
+        ALTER TABLE predictions
+            DROP CONSTRAINT IF EXISTS chk_confidence_scores_keys;
+        ALTER TABLE predictions RENAME COLUMN confidence_scores TO all_scores;
+    END IF;
+END$$;
+
+-- 8. Drop the helper function that backed the dropped CHECK. Safe-IF-EXISTS
+--    so re-runs and fresh databases (where schema.sql never created it) both
+--    work.
+DROP FUNCTION IF EXISTS jsonb_key_count(JSONB);
+
+-- 9. Drop the now-orphaned ``stutterclass`` ENUM type so it doesn't linger
+--    in pg_type after the column that used it is gone.
+DROP TYPE IF EXISTS stutterclass;
+
 COMMIT;

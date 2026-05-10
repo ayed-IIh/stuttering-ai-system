@@ -170,10 +170,10 @@ _INSERT_PREDICTION_SQL = text(
     """
     INSERT INTO predictions (
         id, request_id, audio_filename, audio_duration_sec,
-        confidence_scores, model_version_id, processing_time_ms, client_ip
+        all_scores, model_version_id, processing_time_ms, client_ip
     ) VALUES (
         :id, :request_id, :audio_filename, :audio_duration_sec,
-        CAST(:confidence_scores AS JSONB),
+        CAST(:all_scores AS JSONB),
         :model_version_id, :processing_time_ms, CAST(:client_ip AS INET)
     )
     """
@@ -239,7 +239,7 @@ async def _persist_parent_prediction(
         "request_id": str(prediction_id),
         "audio_filename": (audio_filename or "upload.wav")[:500],
         "audio_duration_sec": float(audio_duration_sec),
-        "confidence_scores": json.dumps(
+        "all_scores": json.dumps(
             {k: float(v) for k, v in all_scores.items()}
         ),
         "model_version_id": str(model_version_id),
