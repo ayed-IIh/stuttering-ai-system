@@ -40,7 +40,7 @@ from ai.preprocessing.audio_loader import (
     normalize_waveform,
     pad_or_truncate,
 )
-from shared.labels import CLASS_LABELS, NUM_CLASSES, get_multi_hot
+from shared.labels import CLASS_LABELS, get_multi_hot
 
 logger = logging.getLogger(__name__)
 
