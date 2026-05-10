@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     MODEL_SOURCE: Literal["local", "s3"] = "local"
     DEVICE: Literal["cpu", "cuda"] = "cpu"
     MAX_AUDIO_SIZE_MB: int = 10
+    # Multi-label decision threshold: sigmoid(logit) >= threshold ⇒ class is in
+    # ``predicted_classes``. Per-class threshold tuning happens at eval time; this
+    # is the global default applied at /predict.
+    MULTI_LABEL_THRESHOLD: float = Field(default=0.5, ge=0.0, le=1.0)
     # Stored as str so env / .env can use comma-separated values (pydantic-settings JSON-decodes list fields).
     allowed_origins_raw: str = Field(
         default="",

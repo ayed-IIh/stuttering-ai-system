@@ -1,8 +1,15 @@
-"""
-Main training entrypoint.
+"""Multi-label training entrypoint for the stuttering classifier.
+
+Loss : ``F.binary_cross_entropy_with_logits`` (one independent binary head
+       per class).
+Decode: ``sigmoid(logits) >= threshold`` → multi-hot prediction.
+Metrics: macro-F1, sample-F1, Hamming loss, plus per-epoch accuracy
+       (exact-match across all 7 classes).
+
+Threshold is read from ``config['training']['threshold']`` — never hardcoded.
 
 Example:
-  python ai/training/train.py --config ai/training/configs/baseline_frozen.yaml
+    python ai/training/train.py --config ai/training/configs/baseline_frozen.yaml
 """
 
 from __future__ import annotations
@@ -17,7 +24,11 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    hamming_loss,
+)
 from torch.optim import AdamW
 from transformers import (
     Wav2Vec2Processor,
@@ -37,11 +48,11 @@ from ai.training.checkpoint_utils import (  # noqa: E402
     save_last_checkpoint,
 )
 from ai.training.dataloader import get_dataloader  # noqa: E402
-from shared.labels import LABEL2ID  # noqa: E402
+from shared.labels import LABEL2ID, NUM_CLASSES  # noqa: E402
 
 
 def _get_device(device_cfg: str = "auto") -> torch.device:
-    """Resolve compute device from config string ('auto', 'cuda', 'mps', 'cpu')."""
+    """Resolve compute device from a config string."""
     if device_cfg != "auto":
         return torch.device(device_cfg)
     if torch.cuda.is_available():
@@ -53,17 +64,17 @@ def _get_device(device_cfg: str = "auto") -> torch.device:
 
 def _resolve_path(cwd: Path, p: str | Path) -> Path:
     path = Path(p)
-    if path.is_absolute():
-        return path.resolve()
-    return (cwd / path).resolve()
+    return path.resolve() if path.is_absolute() else (cwd / path).resolve()
 
 
 def _load_config(path: Path) -> dict:
+    """Read a YAML config file."""
     with path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
 def _set_seed(seed: int) -> None:
+    """Seed all RNG sources for reproducibility."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -72,6 +83,7 @@ def _set_seed(seed: int) -> None:
 
 
 def _build_model(cfg: dict, device: torch.device) -> StutteringClassifier:
+    """Instantiate StutteringClassifier from a config dict and move to device."""
     m = cfg["model"]
     mc = ModelConfig(
         model_name=m["model_name"],
@@ -84,6 +96,32 @@ def _build_model(cfg: dict, device: torch.device) -> StutteringClassifier:
     return model.to(device)
 
 
+def _decode_multi_hot(
+    logits: torch.Tensor, threshold: float
+) -> tuple[np.ndarray, np.ndarray]:
+    """Convert raw logits to (multi-hot predictions, sigmoid probabilities).
+
+    Args:
+        logits: ``(batch, NUM_CLASSES)`` raw model output.
+        threshold: Decision threshold in [0, 1].
+
+    Returns:
+        (predictions, probabilities) as numpy arrays of shape
+        ``(batch, NUM_CLASSES)``. Predictions are float32 with values in
+        ``{0.0, 1.0}``; probabilities are the post-sigmoid values.
+    """
+    if logits.dim() != 2 or logits.shape[1] != NUM_CLASSES:
+        raise RuntimeError(
+            f"Bad logits shape {tuple(logits.shape)}; expected (batch, {NUM_CLASSES})"
+        )
+    probs = torch.sigmoid(logits)
+    preds = (probs >= threshold).float()
+    return (
+        preds.detach().cpu().numpy(),
+        probs.detach().cpu().numpy(),
+    )
+
+
 def _train_one_epoch(
     model: StutteringClassifier,
     loader,
@@ -92,17 +130,18 @@ def _train_one_epoch(
     device: torch.device,
     max_grad_norm: float,
 ) -> float:
+    """Run one training epoch and return mean loss across batches."""
     model.train()
     total_loss = 0.0
     n_batches = 0
     for batch in loader:
         input_values = batch["input_values"].to(device)
         attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+        labels = batch["labels"].to(device).float()
 
         optimizer.zero_grad(set_to_none=True)
         logits = model(input_values, attention_mask=attention_mask)
-        loss = F.cross_entropy(logits, labels)
+        loss = F.binary_cross_entropy_with_logits(logits, labels)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
         optimizer.step()
@@ -110,38 +149,128 @@ def _train_one_epoch(
 
         total_loss += float(loss.item())
         n_batches += 1
-
     return total_loss / max(n_batches, 1)
 
 
+def _validation_metrics(
+    y_true: np.ndarray, y_pred: np.ndarray
+) -> dict[str, float]:
+    """Compute multi-label validation metrics.
+
+    Returns a dict with: exact_match_accuracy, macro_f1, sample_f1, hamming_loss.
+    """
+    if y_true.size == 0:
+        return {
+            "exact_match_accuracy": 0.0,
+            "macro_f1": 0.0,
+            "sample_f1": 0.0,
+            "hamming_loss": 0.0,
+        }
+    return {
+        "exact_match_accuracy": float(accuracy_score(y_true, y_pred)),
+        "macro_f1": float(
+            f1_score(y_true, y_pred, average="macro", zero_division=0)
+        ),
+        "sample_f1": float(
+            f1_score(y_true, y_pred, average="samples", zero_division=0)
+        ),
+        "hamming_loss": float(hamming_loss(y_true, y_pred)),
+    }
+
+
 @torch.no_grad()
-def _validate(model: StutteringClassifier, loader, device: torch.device) -> tuple[float, float, float]:
+def _validate(
+    model: StutteringClassifier,
+    loader,
+    device: torch.device,
+    threshold: float,
+) -> tuple[float, dict[str, float]]:
+    """Run validation and return (mean_loss, metrics_dict)."""
     model.eval()
     total_loss = 0.0
     n_batches = 0
-    all_preds: list[int] = []
-    all_labels: list[int] = []
-
+    all_preds: list[np.ndarray] = []
+    all_labels: list[np.ndarray] = []
     for batch in loader:
         input_values = batch["input_values"].to(device)
         attention_mask = batch["attention_mask"].to(device)
-        labels = batch["labels"].to(device)
+        labels = batch["labels"].to(device).float()
 
         logits = model(input_values, attention_mask=attention_mask)
-        loss = F.cross_entropy(logits, labels)
-
+        loss = F.binary_cross_entropy_with_logits(logits, labels)
         total_loss += float(loss.item())
         n_batches += 1
-        preds = logits.argmax(dim=-1).cpu().numpy().tolist()
-        all_preds.extend(preds)
-        all_labels.extend(labels.cpu().numpy().tolist())
+
+        preds, _ = _decode_multi_hot(logits, threshold)
+        all_preds.append(preds)
+        all_labels.append(labels.detach().cpu().numpy())
 
     mean_loss = total_loss / max(n_batches, 1)
-    acc = float(accuracy_score(all_labels, all_preds)) if all_labels else 0.0
-    macro_f1 = float(
-        f1_score(all_labels, all_preds, average="macro", zero_division=0)
-    ) if all_labels else 0.0
-    return mean_loss, acc, macro_f1
+    if all_preds:
+        y_pred = np.concatenate(all_preds, axis=0)
+        y_true = np.concatenate(all_labels, axis=0)
+    else:
+        y_pred = np.empty((0, NUM_CLASSES))
+        y_true = np.empty((0, NUM_CLASSES))
+    metrics = _validation_metrics(y_true, y_pred)
+    return mean_loss, metrics
+
+
+def _read_threshold(training_cfg: dict) -> float:
+    """Read and validate the multi-label decision threshold from config."""
+    if "threshold" not in training_cfg:
+        raise KeyError(
+            "Missing required field 'threshold' in training config "
+            "(multi-label decision threshold, e.g. 0.5)"
+        )
+    threshold = float(training_cfg["threshold"])
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError(
+            f"threshold must be in [0.0, 1.0]; got {threshold}"
+        )
+    return threshold
+
+
+_VALID_SCHEDULER_TYPES = ("linear", "cosine")
+
+
+def _build_scheduler(scheduler_type: str, optimizer, num_warmup_steps, num_training_steps):
+    """Build the LR scheduler named by ``scheduler_type``.
+
+    Raises:
+        ValueError: If ``scheduler_type`` is not in ``_VALID_SCHEDULER_TYPES``.
+            Falling back silently to ``linear`` would mask config typos and
+            make experiment runs hard to reproduce.
+    """
+    if scheduler_type == "cosine":
+        return get_cosine_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
+        )
+    if scheduler_type == "linear":
+        return get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
+        )
+    raise ValueError(
+        f"Unknown scheduler_type {scheduler_type!r}; "
+        f"valid options are {list(_VALID_SCHEDULER_TYPES)}"
+    )
+
+
+_LOG_FIELDS: tuple[str, ...] = (
+    "epoch",
+    "train_loss",
+    "val_loss",
+    "val_exact_match_accuracy",
+    "val_macro_f1",
+    "val_sample_f1",
+    "val_hamming_loss",
+    "learning_rate",
+    "threshold",
+)
 
 
 def run_training(
@@ -151,11 +280,10 @@ def run_training(
     config_path: Path | None = None,
     verbose: bool = True,
 ) -> dict[str, Any]:
-    """
-    Run training from an in-memory config dict (same schema as YAML training configs).
+    """Run training from an in-memory config dict.
 
-    Returns best validation macro-F1 observed, validation loss at that epoch, and
-    the experiment name used for checkpoints/logs.
+    Returns best validation macro-F1 observed, validation loss at that epoch,
+    and the experiment name used for checkpoints/logs.
     """
     if cwd is None:
         cwd = Path.cwd().resolve()
@@ -164,11 +292,14 @@ def run_training(
     output_cfg = raw["output"]
     training = raw["training"]
 
-    experiment_name = str(output_cfg["experiment_name"])
+    threshold = _read_threshold(training)
 
+    experiment_name = str(output_cfg["experiment_name"])
     train_manifest = _resolve_path(cwd, data_cfg["train_manifest"])
     val_manifest = _resolve_path(cwd, data_cfg["val_manifest"])
-    checkpoint_root = _resolve_path(cwd, output_cfg.get("checkpoint_dir", "ai/training/checkpoints"))
+    checkpoint_root = _resolve_path(
+        cwd, output_cfg.get("checkpoint_dir", "ai/training/checkpoints")
+    )
     log_root = _resolve_path(cwd, output_cfg.get("log_dir", "ai/training/logs"))
 
     exp_ckpt_dir = checkpoint_root / experiment_name
@@ -214,35 +345,16 @@ def run_training(
     )
 
     if len(train_loader) == 0:
-        raise RuntimeError(f"Train DataLoader is empty (check manifest): {train_manifest}")
+        raise RuntimeError(f"Train DataLoader is empty: {train_manifest}")
     if len(val_loader) == 0:
-        raise RuntimeError(f"Validation DataLoader is empty (check manifest): {val_manifest}")
+        raise RuntimeError(f"Validation DataLoader is empty: {val_manifest}")
 
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = AdamW(params, lr=lr, weight_decay=weight_decay)
-
     num_training_steps = num_epochs * len(train_loader)
     num_warmup_steps = int(num_training_steps * warmup_ratio)
-    if scheduler_type == "cosine":
-        scheduler = get_cosine_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=num_warmup_steps,
-            num_training_steps=num_training_steps,
-        )
-    else:
-        scheduler = get_linear_schedule_with_warmup(
-            optimizer,
-            num_warmup_steps=num_warmup_steps,
-            num_training_steps=num_training_steps,
-        )
-
-    log_fields = (
-        "epoch",
-        "train_loss",
-        "val_loss",
-        "val_accuracy",
-        "val_macro_f1",
-        "learning_rate",
+    scheduler = _build_scheduler(
+        scheduler_type, optimizer, num_warmup_steps, num_training_steps
     )
 
     best_f1 = -1.0
@@ -254,29 +366,27 @@ def run_training(
     try:
         for epoch in range(1, num_epochs + 1):
             train_loss = _train_one_epoch(
-                model,
-                train_loader,
-                optimizer,
-                scheduler,
-                device,
-                max_grad_norm,
+                model, train_loader, optimizer, scheduler, device, max_grad_norm
             )
-            val_loss, val_acc, val_macro_f1 = _validate(model, val_loader, device)
+            val_loss, metrics = _validate(model, val_loader, device, threshold)
             best_val_loss = min(best_val_loss, val_loss)
-            running_best_f1 = max(best_f1, val_macro_f1)
+            running_best_f1 = max(best_f1, metrics["macro_f1"])
 
             lr_now = scheduler.get_last_lr()[0] if scheduler.get_last_lr() else lr
 
             append_training_log_csv(
                 training_log_csv,
-                log_fields,
+                _LOG_FIELDS,
                 {
                     "epoch": epoch,
                     "train_loss": f"{train_loss:.6f}",
                     "val_loss": f"{val_loss:.6f}",
-                    "val_accuracy": f"{val_acc:.6f}",
-                    "val_macro_f1": f"{val_macro_f1:.6f}",
+                    "val_exact_match_accuracy": f"{metrics['exact_match_accuracy']:.6f}",
+                    "val_macro_f1": f"{metrics['macro_f1']:.6f}",
+                    "val_sample_f1": f"{metrics['sample_f1']:.6f}",
+                    "val_hamming_loss": f"{metrics['hamming_loss']:.6f}",
                     "learning_rate": f"{lr_now:.8e}",
+                    "threshold": f"{threshold:.4f}",
                 },
             )
 
@@ -289,8 +399,8 @@ def run_training(
                 metrics={
                     "train_loss": train_loss,
                     "val_loss": val_loss,
-                    "val_accuracy": val_acc,
-                    "val_macro_f1": val_macro_f1,
+                    **{f"val_{k}": v for k, v in metrics.items()},
+                    "threshold": threshold,
                 },
                 best_val_loss=best_val_loss,
                 best_val_f1=running_best_f1,
@@ -298,14 +408,14 @@ def run_training(
                 label2id=dict(LABEL2ID),
             )
 
-            if val_macro_f1 > best_f1:
-                best_f1 = val_macro_f1
+            if metrics["macro_f1"] > best_f1:
+                best_f1 = metrics["macro_f1"]
                 best_val_loss_at_best_f1 = val_loss
                 save_best_checkpoint(
                     best_model_path,
                     model,
                     optimizer=optimizer,
-                    val_macro_f1=val_macro_f1,
+                    val_macro_f1=metrics["macro_f1"],
                     val_loss=val_loss,
                     best_val_loss=best_val_loss,
                     best_val_f1=best_f1,
@@ -320,9 +430,12 @@ def run_training(
                     f"Epoch {epoch}/{num_epochs} | "
                     f"train_loss={train_loss:.4f} | "
                     f"val_loss={val_loss:.4f} | "
-                    f"val_accuracy={val_acc:.4f} | "
-                    f"val_macro_f1={val_macro_f1:.4f} | "
+                    f"val_acc={metrics['exact_match_accuracy']:.4f} | "
+                    f"val_macro_f1={metrics['macro_f1']:.4f} | "
+                    f"val_sample_f1={metrics['sample_f1']:.4f} | "
+                    f"val_hamming={metrics['hamming_loss']:.4f} | "
                     f"lr={lr_now:.2e} | "
+                    f"thr={threshold:.2f} | "
                     f"best_val_macro_f1={best_f1:.4f}"
                 )
     except KeyboardInterrupt:
@@ -349,7 +462,10 @@ def run_training(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train StutteringClassifier (Wav2Vec2).")
+    """CLI entrypoint: `python train.py --config <path.yaml>`."""
+    parser = argparse.ArgumentParser(
+        description="Train StutteringClassifier (Wav2Vec2, multi-label)."
+    )
     parser.add_argument(
         "--config",
         type=str,
