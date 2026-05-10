@@ -382,13 +382,25 @@ class ModelService:
                 outputs = self._forward(inputs)
                 probs = self._sigmoid(outputs)
                 threshold = float(self._settings.MULTI_LABEL_THRESHOLD)
-                names = list(self._class_names[: len(probs)])
+                # The wire contract is keyed by canonical CLASS_LABELS; do not
+                # silently slice or remap — drift here would attach probs to
+                # the wrong class names. Fail fast if the loaded artifact's
+                # class order disagrees with the shared taxonomy.
+                if (
+                    list(self._class_names) != list(CLASS_LABELS)
+                    or len(probs) != len(CLASS_LABELS)
+                ):
+                    raise PredictionError(
+                        "Model artifact class order does not match "
+                        "shared.labels.CLASS_LABELS — refusing to assign "
+                        "probabilities to potentially wrong class names."
+                    )
                 all_scores = {
-                    name: float(probs[i]) for i, name in enumerate(names)
+                    name: float(probs[i]) for i, name in enumerate(CLASS_LABELS)
                 }
                 predicted_classes = [
                     {"class": name, "confidence": float(probs[i])}
-                    for i, name in enumerate(names)
+                    for i, name in enumerate(CLASS_LABELS)
                     if probs[i] >= threshold
                 ]
                 # Sort detected classes by confidence descending for stable client UX.

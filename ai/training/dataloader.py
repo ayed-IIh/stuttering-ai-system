@@ -131,10 +131,19 @@ def _extract_label_tensors(
 
 
 def _resolve_paths(df: pd.DataFrame, path_col: str, manifest_path: Path) -> list[Path]:
-    """Resolve every path in the column relative to the manifest's directory."""
+    """Resolve every path in the column relative to the manifest's directory.
+
+    Raises:
+        ValueError: If any row has an empty/NaN path. ``str(np.nan)`` is
+            ``"nan"`` and would otherwise become a doomed path resolved later.
+    """
     base = manifest_path.parent.resolve()
     out: list[Path] = []
-    for raw in df[path_col].tolist():
+    for idx, raw in enumerate(df[path_col].tolist()):
+        if pd.isna(raw) or not str(raw).strip():
+            raise ValueError(
+                f"{manifest_path} row {idx}: {path_col!r} is empty"
+            )
         rp = Path(str(raw).strip())
         out.append(rp if rp.is_absolute() else (base / rp).resolve())
     return out

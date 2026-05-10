@@ -1,11 +1,11 @@
 """
 test_audio_loader.py — Unit tests for ai/preprocessing/audio_loader.py
 
-All tests create real .wav files via torchaudio.save (no mocks). On
-torchaudio>=2.8 the WAV writer routes through ``torchcodec``, which itself
-requires an FFmpeg native library at runtime. When that runtime isn't
-available (typical fresh Windows install) the entire module is skipped —
-the failure is environment-side, not a regression in the audio loader.
+All tests create real .wav files via torchaudio.save (no mocks). Starting
+with **torchaudio 2.9** the WAV writer routes through ``torchcodec``, which
+itself needs an FFmpeg native library at runtime. On older torchaudio
+(<2.9) the soundfile/SoX backends handle WAV without FFmpeg, so we only
+skip when both (a) torchaudio is 2.9+ AND (b) torchcodec isn't importable.
 Run from repo root: pytest tests/test_audio_loader.py -v
 """
 
@@ -13,15 +13,28 @@ import pytest
 import torch
 import torchaudio
 
-try:  # noqa: SIM105
-    import torchcodec  # noqa: F401
-except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
-    pytest.skip(
-        f"torchcodec runtime unavailable ({_exc.__class__.__name__}); "
-        f"audio fixtures cannot be written. Install FFmpeg and torchcodec "
-        f"to enable.",
-        allow_module_level=True,
-    )
+from packaging.version import Version
+
+_TORCHCODEC_REQUIRED_FROM = Version("2.9.0")
+
+
+def _torchaudio_needs_torchcodec() -> bool:
+    try:
+        return Version(torchaudio.__version__) >= _TORCHCODEC_REQUIRED_FROM
+    except Exception:  # pragma: no cover - dev-version strings
+        return True
+
+
+if _torchaudio_needs_torchcodec():
+    try:  # noqa: SIM105
+        import torchcodec  # noqa: F401
+    except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
+        pytest.skip(
+            f"torchaudio {torchaudio.__version__} requires torchcodec for "
+            f"WAV save, and it is unavailable ({_exc.__class__.__name__}). "
+            f"Install FFmpeg and torchcodec to enable.",
+            allow_module_level=True,
+        )
 
 from ai.preprocessing.audio_loader import (
     TARGET_SAMPLES,

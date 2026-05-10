@@ -187,7 +187,14 @@ class StutteringDataset(Dataset):
 
         rows: list[dict] = []
         for idx, row in df.iterrows():
-            file_path = str(row[_PATH_COLUMN]).strip()
+            raw_path = row[_PATH_COLUMN]
+            if pd.isna(raw_path) or not str(raw_path).strip():
+                # Fail fast on bad schema rather than letting load_audio crash
+                # mid-epoch with a confusing FileNotFoundError on "nan".
+                raise ValueError(
+                    f"{manifest_path} row {idx}: {_PATH_COLUMN!r} is empty"
+                )
+            file_path = str(raw_path).strip()
             try:
                 labels = _parse_label_cell(row[label_col])
             except ValueError as exc:

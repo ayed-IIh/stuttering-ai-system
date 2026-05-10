@@ -171,10 +171,10 @@ class TestBuildScheduler:
         assert sch is not None
         sch.step()
 
-    def test_unknown_falls_back_to_linear(self) -> None:
-        sch = _build_scheduler("bogus", self._optimizer(), 0, 5)
-        assert sch is not None
-        sch.step()
+    def test_unknown_raises_value_error(self) -> None:
+        # Silent fallback to linear hides config typos; we now fail fast.
+        with pytest.raises(ValueError, match="Unknown scheduler_type"):
+            _build_scheduler("bogus", self._optimizer(), 0, 5)
 
 
 class TestLogFields:

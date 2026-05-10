@@ -14,6 +14,7 @@ logged but never propagated to the client.
 from __future__ import annotations
 
 import io
+import json
 import logging
 import time
 import uuid
@@ -165,12 +166,99 @@ def _build_prediction_response(
     )
 
 
+_INSERT_PREDICTION_SQL = text(
+    """
+    INSERT INTO predictions (
+        id, request_id, audio_filename, audio_duration_sec,
+        confidence_scores, model_version_id, processing_time_ms, client_ip
+    ) VALUES (
+        :id, :request_id, :audio_filename, :audio_duration_sec,
+        CAST(:confidence_scores AS JSONB),
+        :model_version_id, :processing_time_ms, CAST(:client_ip AS INET)
+    )
+    """
+)
+
 _INSERT_PREDICTION_CLASS_SQL = text(
     """
     INSERT INTO prediction_classes (prediction_id, class_label, confidence)
     VALUES (:prediction_id, :class_label, :confidence)
     """
 )
+
+
+async def _persist_parent_prediction(
+    db: AsyncSession,
+    *,
+    prediction_id: uuid.UUID,
+    audio_filename: str,
+    audio_duration_sec: float,
+    all_scores: dict[str, float],
+    model_version_label: str,
+    processing_time_ms: int,
+    client_ip: str,
+) -> bool:
+    """Insert the parent ``predictions`` row that ``prediction_classes`` FKs to.
+
+    Args:
+        db: Open async DB session.
+        prediction_id: UUID used as both ``predictions.id`` and ``request_id``.
+        audio_filename: Original upload filename (truncated to schema width).
+        audio_duration_sec: Decoded WAV duration; ``0.0`` is allowed.
+        all_scores: 7-key dict of independent sigmoid probabilities.
+        model_version_label: Version string from the loaded checkpoint;
+            resolved to ``model_versions.id`` via :func:`crud.get_model_version_id_by_label`.
+            If no row matches, persistence is skipped (returns ``False``).
+        processing_time_ms: Inference wall-clock.
+        client_ip: Remote address; falls back to ``"127.0.0.1"`` when missing.
+
+    Returns:
+        ``True`` if the parent row was inserted (so children can be attached),
+        ``False`` if the insert was skipped or failed. Never raises.
+    """
+    from backend.db import crud  # local to avoid import cycles in tests
+
+    try:
+        model_version_id = await crud.get_model_version_id_by_label(
+            db, model_version_label
+        )
+    except SQLAlchemyError as exc:
+        logger.warning(
+            "model_version lookup failed for %r: %s", model_version_label, exc
+        )
+        return False
+    if model_version_id is None:
+        logger.debug(
+            "Skipping prediction persist: no model_versions row for %r",
+            model_version_label,
+        )
+        return False
+
+    payload = {
+        "id": str(prediction_id),
+        "request_id": str(prediction_id),
+        "audio_filename": (audio_filename or "upload.wav")[:500],
+        "audio_duration_sec": float(audio_duration_sec),
+        "confidence_scores": json.dumps(
+            {k: float(v) for k, v in all_scores.items()}
+        ),
+        "model_version_id": str(model_version_id),
+        "processing_time_ms": int(processing_time_ms),
+        "client_ip": str(client_ip or "127.0.0.1"),
+    }
+    try:
+        await db.execute(_INSERT_PREDICTION_SQL, payload)
+        await db.commit()
+        return True
+    except SQLAlchemyError as exc:
+        logger.warning(
+            "predictions parent insert failed for %s: %s", prediction_id, exc
+        )
+        try:
+            await db.rollback()
+        except SQLAlchemyError:
+            logger.exception("rollback also failed for %s", prediction_id)
+        return False
 
 
 async def _persist_multi_label_prediction(
@@ -180,18 +268,24 @@ async def _persist_multi_label_prediction(
 ) -> None:
     """Insert one row per detected class into ``prediction_classes``.
 
+    Caller responsibility: the parent ``predictions`` row must already exist
+    (use :func:`_persist_parent_prediction` first). The FK on
+    ``prediction_classes.prediction_id`` will reject orphan inserts.
+
     Args:
         db: Open async DB session.
         prediction_id: UUID of the parent ``predictions`` row. Same as the
             request_id returned to the client.
         predicted_classes: List of ``{class, confidence}`` dicts (the
-            ``predicted_classes`` field of the ModelService output).
+            ``predicted_classes`` field of the ModelService output). May be
+            empty, in which case this function is a no-op (a valid empty
+            prediction is recorded only via the parent row).
 
     Returns:
         None. The function never raises — any database error is logged.
     """
     if not predicted_classes:
-        # Empty list is a valid prediction; nothing to insert.
+        # Empty list is a valid prediction; the parent row is enough.
         return
     try:
         for entry in predicted_classes:
@@ -277,11 +371,26 @@ async def predict(
         ) from exc
 
     response = _build_prediction_response(prediction, request_id)
-    # Persist the per-class breakdown. Failures are absorbed inside the helper
-    # so a flaky DB never blocks the inference response.
-    await _persist_multi_label_prediction(
-        db, request_uuid, prediction["predicted_classes"]
+    # Persist parent + per-class child rows. Failures are absorbed inside the
+    # helpers so a flaky DB never blocks the inference response. The parent
+    # insert resolves model_version_id; if it returns False (no matching
+    # model_versions row, FK error, etc.) we skip the children — orphan child
+    # rows are blocked by the FK on prediction_classes.prediction_id.
+    client_host = request.client.host if request.client else "127.0.0.1"
+    parent_ok = await _persist_parent_prediction(
+        db,
+        prediction_id=request_uuid,
+        audio_filename=audio_file.filename or "upload.wav",
+        audio_duration_sec=_wav_duration_sec(audio_bytes),
+        all_scores=prediction["all_scores"],
+        model_version_label=str(prediction["model_version"]),
+        processing_time_ms=int(prediction["processing_time_ms"]),
+        client_ip=client_host,
     )
+    if parent_ok:
+        await _persist_multi_label_prediction(
+            db, request_uuid, prediction["predicted_classes"]
+        )
     return response
 
 

@@ -37,16 +37,20 @@ BEGIN;
 -- 1. New child table: prediction_classes
 CREATE TABLE IF NOT EXISTS prediction_classes (
     id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- Inline REFERENCES on prediction_id is the canonical FK; no separate
+    -- named CONSTRAINT below to avoid a redundant duplicate FK in pg_constraint.
     prediction_id  UUID NOT NULL REFERENCES predictions(id) ON DELETE CASCADE,
     class_label    TEXT NOT NULL,
     confidence     NUMERIC(6,5) NOT NULL CHECK (confidence BETWEEN 0 AND 1),
     created_at     TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    CONSTRAINT fk_prediction
-        FOREIGN KEY (prediction_id) REFERENCES predictions(id),
     CONSTRAINT chk_class_label CHECK (class_label = ANY(ARRAY[
         'fluent','blocks','interjections','prolongations',
         'part_word_repetition','phrase_repetition','word_repetition'
-    ]))
+    ])),
+    -- One row per (prediction, class) — never store the same class twice for
+    -- the same prediction. Cheap idempotency for retried writers.
+    CONSTRAINT uq_prediction_classes_prediction_id_class_label
+        UNIQUE (prediction_id, class_label)
 );
 
 -- 2. Per-prediction lookup (the most common access pattern from

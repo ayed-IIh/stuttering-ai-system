@@ -18,7 +18,7 @@ must match this document; any drift is a bug.
 - **Character encoding:** UTF-8.
 - **Class names** appearing in any response field always come from
   `shared.labels.CLASS_LABELS`. They are the 7-element lowercase taxonomy:
-  ```
+  ```text
   fluent, blocks, interjections, prolongations,
   part_word_repetition, phrase_repetition, word_repetition
   ```

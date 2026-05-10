@@ -82,3 +82,14 @@ def test_foreign_key_with_cascade_delete(sql_text: str) -> None:
 
 def test_confidence_check_in_unit_interval(sql_text: str) -> None:
     assert "CHECK (confidence BETWEEN 0 AND 1)" in sql_text
+
+
+def test_unique_prediction_class_pair(sql_text: str) -> None:
+    """Same class must not be insertable twice for the same prediction."""
+    assert "uq_prediction_classes_prediction_id_class_label" in sql_text
+    assert "UNIQUE (prediction_id, class_label)" in sql_text
+
+
+def test_no_redundant_fk_constraint_name(sql_text: str) -> None:
+    """Inline REFERENCES is the canonical FK; no separate named FK needed."""
+    assert "CONSTRAINT fk_prediction" not in sql_text

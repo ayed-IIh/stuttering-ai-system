@@ -231,18 +231,32 @@ def _read_threshold(training_cfg: dict) -> float:
     return threshold
 
 
+_VALID_SCHEDULER_TYPES = ("linear", "cosine")
+
+
 def _build_scheduler(scheduler_type: str, optimizer, num_warmup_steps, num_training_steps):
-    """Build the LR scheduler named by ``scheduler_type``."""
+    """Build the LR scheduler named by ``scheduler_type``.
+
+    Raises:
+        ValueError: If ``scheduler_type`` is not in ``_VALID_SCHEDULER_TYPES``.
+            Falling back silently to ``linear`` would mask config typos and
+            make experiment runs hard to reproduce.
+    """
     if scheduler_type == "cosine":
         return get_cosine_schedule_with_warmup(
             optimizer,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps,
         )
-    return get_linear_schedule_with_warmup(
-        optimizer,
-        num_warmup_steps=num_warmup_steps,
-        num_training_steps=num_training_steps,
+    if scheduler_type == "linear":
+        return get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
+        )
+    raise ValueError(
+        f"Unknown scheduler_type {scheduler_type!r}; "
+        f"valid options are {list(_VALID_SCHEDULER_TYPES)}"
     )
 
 

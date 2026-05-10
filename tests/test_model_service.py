@@ -1,9 +1,10 @@
 """Tests for backend.services.model_service (inference + audio preprocessing).
 
 Note: many of these tests use ``torchaudio.save`` to produce WAV fixtures.
-On torchaudio>=2.8 that path requires the ``torchcodec`` native runtime
-(FFmpeg). Skip the whole module when it isn't usable so the rest of the
-suite stays green on machines without FFmpeg.
+Starting with torchaudio 2.9 that path requires the ``torchcodec`` native
+runtime (FFmpeg). On older torchaudio (<2.9) WAV save uses soundfile/SoX
+and works without FFmpeg, so we only skip when both (a) torchaudio is 2.9+
+AND (b) torchcodec isn't importable.
 """
 
 from __future__ import annotations
@@ -14,16 +15,28 @@ from pathlib import Path
 import pytest
 import torch
 import torchaudio
+from packaging.version import Version
 
-try:  # noqa: SIM105
-    import torchcodec  # noqa: F401
-except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
-    pytest.skip(
-        f"torchcodec runtime unavailable ({_exc.__class__.__name__}); "
-        f"audio fixtures cannot be written. Install FFmpeg and torchcodec "
-        f"to enable.",
-        allow_module_level=True,
-    )
+_TORCHCODEC_REQUIRED_FROM = Version("2.9.0")
+
+
+def _torchaudio_needs_torchcodec() -> bool:
+    try:
+        return Version(torchaudio.__version__) >= _TORCHCODEC_REQUIRED_FROM
+    except Exception:  # pragma: no cover - dev-version strings
+        return True
+
+
+if _torchaudio_needs_torchcodec():
+    try:  # noqa: SIM105
+        import torchcodec  # noqa: F401
+    except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
+        pytest.skip(
+            f"torchaudio {torchaudio.__version__} requires torchcodec for "
+            f"WAV save, and it is unavailable ({_exc.__class__.__name__}). "
+            f"Install FFmpeg and torchcodec to enable.",
+            allow_module_level=True,
+        )
 
 from ai.preprocessing.audio_loader import TARGET_SAMPLES
 from backend.app.config import Settings, clear_settings_cache

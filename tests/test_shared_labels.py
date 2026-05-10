@@ -128,6 +128,17 @@ class TestGetMultiHotErrors:
         with pytest.raises(ValueError, match="Unknown class label"):
             get_multi_hot([bad_label])
 
+    def test_raw_string_input_raises_type_error(self) -> None:
+        # ``"fluent"`` is iterable and would otherwise be split into characters.
+        with pytest.raises(TypeError, match="not a single str"):
+            get_multi_hot("fluent")  # type: ignore[arg-type]
+
+    def test_raw_string_with_valid_label_still_raises(self) -> None:
+        # Even when the string happens to be a valid class name.
+        for label in CLASS_LABELS:
+            with pytest.raises(TypeError):
+                get_multi_hot(label)  # type: ignore[arg-type]
+
     def test_error_message_lists_valid_labels(self) -> None:
         with pytest.raises(ValueError) as exc_info:
             get_multi_hot(["not_a_class"])
