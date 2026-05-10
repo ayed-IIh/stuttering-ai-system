@@ -140,11 +140,22 @@ async def insert_prediction_classes(
         return 0
 
     rows: list[PredictionClass] = []
-    for entry in classes:
+    for idx, entry in enumerate(classes):
+        # Surface missing keys as ValueError so the caller has one error type
+        # to handle for "bad per-class payload" (matches the docstring contract
+        # and what PredictionClassCreate already raises for invalid values).
+        try:
+            class_label = entry["class_label"]
+            confidence_raw = entry["confidence"]
+        except KeyError as exc:
+            raise ValueError(
+                f"classes[{idx}] missing required key: {exc.args[0]!r} "
+                f"(expected 'class_label' and 'confidence')"
+            ) from exc
         payload = PredictionClassCreate(
             prediction_id=prediction_id,
-            class_label=entry["class_label"],
-            confidence=float(entry["confidence"]),
+            class_label=class_label,
+            confidence=float(confidence_raw),
         )
         rows.append(
             PredictionClass(
