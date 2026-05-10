@@ -1,3 +1,15 @@
+"""HTTP route handlers for the multi-label inference API.
+
+POST /predict accepts a WAV upload and returns multi-label predictions:
+each class whose sigmoid probability ``>= threshold`` is included in
+``predicted_classes``. The full per-class sigmoid distribution is in
+``all_scores`` (NOT softmax — values do not sum to 1.0).
+
+DB persistence of predictions is currently disabled in this branch — the
+existing schema is single-label and migration 002 is pending (Step 9 of the
+multi-label switch).
+"""
+
 from __future__ import annotations
 
 import io
@@ -5,18 +17,17 @@ import logging
 import time
 import uuid
 import wave
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.middleware import (
     RequestSizeLimitExceeded,
     validate_audio_upload,
 )
-from backend.db import crud
 from backend.db.database import get_db
-from backend.db.schemas import ConfidenceScores, PredictionCreate
 from backend.services.model_service import (
     InvalidAudioError,
     ModelNotLoadedError,
@@ -28,12 +39,52 @@ from shared.labels import CLASS_LABELS, ID2LABEL, LABEL2ID
 logger = logging.getLogger(__name__)
 
 
+class PredictedClass(BaseModel):
+    """One detected class in a multi-label prediction."""
+
+    model_config = ConfigDict(populate_by_name=True)
+    class_name: str = Field(
+        ..., alias="class", description="One of shared.labels.CLASS_LABELS"
+    )
+    confidence: float = Field(..., ge=0.0, le=1.0)
+
+
 class PredictionResponse(BaseModel):
-    predicted_class: str
-    confidence_scores: dict[str, float]
+    """Multi-label /predict response.
+
+    Notes:
+        * ``predicted_classes`` lists every class with sigmoid ≥ ``threshold``,
+          sorted by descending confidence. May be empty if no class crosses.
+        * ``all_scores`` always contains exactly the 7 keys from CLASS_LABELS.
+          Values are independent sigmoid probabilities and do **not** sum to 1.0.
+    """
+
+    predicted_classes: list[PredictedClass]
+    all_scores: dict[str, float]
+    threshold: float
     processing_time_ms: int
     model_version: str
     request_id: str
+
+    @field_validator("all_scores")
+    @classmethod
+    def _all_scores_match_class_labels(cls, v: dict[str, float]) -> dict[str, float]:
+        """all_scores must have exactly the keys defined in CLASS_LABELS."""
+        expected = set(CLASS_LABELS)
+        actual = set(v.keys())
+        if actual != expected:
+            missing = sorted(expected - actual)
+            extra = sorted(actual - expected)
+            raise ValueError(
+                "all_scores keys must equal CLASS_LABELS; "
+                f"missing={missing} extra={extra}"
+            )
+        for name, score in v.items():
+            if not 0.0 <= float(score) <= 1.0:
+                raise ValueError(
+                    f"all_scores[{name!r}]={score!r} out of [0, 1]"
+                )
+        return v
 
 
 class HealthResponse(BaseModel):
@@ -56,6 +107,7 @@ class ErrorResponse(BaseModel):
 
 
 def get_model_service(request: Request) -> ModelService:
+    """Resolve the singleton ModelService from app state or fail with 503."""
     model_service = getattr(request.app.state, "model_service", None)
     if model_service is None:
         raise HTTPException(
@@ -79,6 +131,7 @@ def _uptime_seconds() -> int:
 
 
 def _wav_duration_sec(audio_bytes: bytes) -> float:
+    """Best-effort WAV duration parse — returns 0.0 if anything's off."""
     try:
         with wave.open(io.BytesIO(audio_bytes), "rb") as w:
             frames = w.getnframes()
@@ -86,64 +139,27 @@ def _wav_duration_sec(audio_bytes: bytes) -> float:
             if rate <= 0:
                 return 0.0
             return frames / float(rate)
-    except Exception:
+    except wave.Error:
+        return 0.0
+    except EOFError:
         return 0.0
 
 
-def _confidence_scores_for_db(raw: dict[str, float]) -> ConfidenceScores:
-    keys = (
-        "fluent",
-        "blocks",
-        "interjections",
-        "prolongations",
-        "part_word_repetition",
-        "phrase_repetition",
-        "word_repetition",
+def _build_prediction_response(
+    prediction: dict[str, Any], request_id: str
+) -> PredictionResponse:
+    """Pack a ModelService.predict() output into the wire response model."""
+    return PredictionResponse(
+        predicted_classes=[
+            PredictedClass(**{"class": p["class"], "confidence": float(p["confidence"])})
+            for p in prediction["predicted_classes"]
+        ],
+        all_scores={k: float(v) for k, v in prediction["all_scores"].items()},
+        threshold=float(prediction["threshold"]),
+        processing_time_ms=int(prediction["processing_time_ms"]),
+        model_version=str(prediction["model_version"]),
+        request_id=request_id,
     )
-    norm = {str(k).lower(): float(v) for k, v in raw.items()}
-    merged = {k: float(norm.get(k, 0.0)) for k in keys}
-    return ConfidenceScores(**merged)
-
-
-async def _persist_prediction(
-    db: AsyncSession,
-    *,
-    request: Request,
-    audio_bytes: bytes,
-    audio_filename: str | None,
-    response: PredictionResponse,
-) -> None:
-    model_version_id = await crud.get_model_version_id_by_label(
-        db, response.model_version
-    )
-    if model_version_id is None:
-        logger.debug(
-            "Skipping prediction DB row: no model_versions row for %r",
-            response.model_version,
-        )
-        return
-    client = request.client
-    host = client.host if client else "127.0.0.1"
-    try:
-        payload = PredictionCreate(
-            audio_filename=(audio_filename or "upload.wav")[:500],
-            audio_duration_sec=_wav_duration_sec(audio_bytes),
-            predicted_class=response.predicted_class,
-            confidence_scores=_confidence_scores_for_db(response.confidence_scores),
-            model_version_id=model_version_id,
-            processing_time_ms=response.processing_time_ms,
-            client_ip=host,
-            request_id=uuid.UUID(response.request_id),
-        )
-        await crud.create_prediction(db, payload)
-    except HTTPException as exc:
-        logger.warning(
-            "Prediction DB insert rejected: %s — %s",
-            exc.status_code,
-            exc.detail,
-        )
-    except Exception:
-        logger.exception("Prediction DB insert failed")
 
 
 @router.post(
@@ -164,7 +180,8 @@ async def predict(
     model_service: ModelService = Depends(get_model_service),
     db: AsyncSession = Depends(get_db),
 ) -> PredictionResponse:
-    started_at = time.perf_counter()
+    """Run multi-label inference on a single WAV upload."""
+    _ = db  # DB persistence disabled in this branch — see module docstring.
     max_size_mb = getattr(request.app.state.settings, "MAX_AUDIO_SIZE_MB", 10)
     audio_bytes = await validate_audio_upload(audio_file, max_size_mb)
     request_id = str(uuid.uuid4())
@@ -199,22 +216,7 @@ async def predict(
                 detail=str(exc),
             ).model_dump(),
         ) from exc
-
-    response = PredictionResponse(
-        predicted_class=str(prediction["predicted_class"]),
-        confidence_scores={k: float(v) for k, v in prediction["confidence_scores"].items()},
-        processing_time_ms=int((time.perf_counter() - started_at) * 1000),
-        model_version=str(prediction["model_version"]),
-        request_id=request_id,
-    )
-    await _persist_prediction(
-        db,
-        request=request,
-        audio_bytes=audio_bytes,
-        audio_filename=audio_file.filename,
-        response=response,
-    )
-    return response
+    return _build_prediction_response(prediction, request_id)
 
 
 @router.get("/health", response_model=HealthResponse)
@@ -222,6 +224,7 @@ async def health(
     request: Request,
     model_service: ModelService = Depends(get_model_service),
 ) -> HealthResponse:
+    """Liveness + readiness."""
     model_loaded = bool(model_service.is_loaded())
     version = getattr(request.app.state, "service_version", "0.0.0")
     return HealthResponse(
@@ -234,6 +237,7 @@ async def health(
 
 @router.get("/classes", response_model=ClassesResponse)
 async def get_classes() -> ClassesResponse:
+    """Return the 7-class taxonomy and its integer ID mapping."""
     return ClassesResponse(
         classes=list(CLASS_LABELS),
         label_to_id=dict(LABEL2ID),

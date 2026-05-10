@@ -360,6 +360,18 @@ class ModelService:
         )
 
     def predict(self, audio_bytes: bytes) -> dict[str, Any]:
+        """Run multi-label inference on a WAV payload.
+
+        Returns a dict with:
+            predicted_classes : list of ``{class, confidence}`` for every class
+                                whose sigmoid probability is ``>= threshold``.
+                                Empty list when no class crosses the threshold.
+            all_scores        : full per-class sigmoid probabilities (do NOT
+                                sum to 1.0 — each is an independent binary head).
+            threshold         : the threshold actually applied (from settings).
+            processing_time_ms: measured wall-clock for this call.
+            model_version     : the loaded model artifact's version string.
+        """
         if not self._loaded:
             raise ModelNotLoadedError("ModelService is not loaded")
         started_at = time.perf_counter()
@@ -368,15 +380,24 @@ class ModelService:
                 waveform = self._decode_and_preprocess_wav(audio_bytes)
                 inputs = self._prepare_inputs(waveform)
                 outputs = self._forward(inputs)
-                probs = self._softmax(outputs)
-                predicted_idx = max(range(len(probs)), key=lambda i: probs[i])
-                confidence_scores = {
-                    label: float(probs[i]) for i, label in enumerate(self._class_names[: len(probs)])
+                probs = self._sigmoid(outputs)
+                threshold = float(self._settings.MULTI_LABEL_THRESHOLD)
+                names = list(self._class_names[: len(probs)])
+                all_scores = {
+                    name: float(probs[i]) for i, name in enumerate(names)
                 }
+                predicted_classes = [
+                    {"class": name, "confidence": float(probs[i])}
+                    for i, name in enumerate(names)
+                    if probs[i] >= threshold
+                ]
+                # Sort detected classes by confidence descending for stable client UX.
+                predicted_classes.sort(key=lambda d: d["confidence"], reverse=True)
                 elapsed_ms = int((time.perf_counter() - started_at) * 1000)
                 return {
-                    "predicted_class": self._class_names[predicted_idx],
-                    "confidence_scores": confidence_scores,
+                    "predicted_classes": predicted_classes,
+                    "all_scores": all_scores,
+                    "threshold": threshold,
                     "processing_time_ms": elapsed_ms,
                     "model_version": self._model_version,
                 }
@@ -510,12 +531,19 @@ class ModelService:
             logits = output
         return logits
 
-    def _softmax(self, logits: Any) -> list[float]:
+    def _sigmoid(self, logits: Any) -> list[float]:
+        """Per-class sigmoid for multi-label decoding.
+
+        Unlike softmax, the resulting probabilities are *independent* per class
+        and do NOT sum to 1.0. Accepts torch tensors, dicts with ``"logits"``,
+        nested lists, or flat lists/tuples — same broad input shapes the old
+        softmax helper supported.
+        """
         if torch is not None and torch.is_tensor(logits):
             tensor = logits
             if tensor.dim() > 1:
                 tensor = tensor[0]
-            probs = torch.softmax(tensor, dim=-1).detach().cpu().tolist()
+            probs = torch.sigmoid(tensor).detach().cpu().tolist()
             return [float(p) for p in probs]
         if isinstance(logits, dict) and "logits" in logits:
             logits = logits["logits"]
@@ -524,10 +552,16 @@ class ModelService:
         arr = [float(x) for x in logits]
         if not arr:
             raise PredictionError("Model returned empty logits")
-        max_v = max(arr)
-        exps = [math.exp(v - max_v) for v in arr]
-        total = sum(exps)
-        return [v / total for v in exps]
+        # 1 / (1 + e^-x); clamp x to avoid overflow in math.exp.
+        out: list[float] = []
+        for v in arr:
+            if v >= 0:
+                ev = math.exp(-v)
+                out.append(1.0 / (1.0 + ev))
+            else:
+                ev = math.exp(v)
+                out.append(ev / (1.0 + ev))
+        return out
 
     def shutdown(self) -> None:
         self._model = None

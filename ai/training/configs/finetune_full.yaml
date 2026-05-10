@@ -18,6 +18,11 @@ training:
   scheduler_type: linear
   seed: 42
   num_workers: 0
+  # Loss is fixed for now — kept here so future experiments can compare.
+  loss: bce_with_logits
+  # Decision threshold for sigmoid → multi-hot prediction at validation/inference.
+  # Independent per class. Sweep on validation to tune per-class thresholds later.
+  threshold: 0.5
 
 data:
   train_manifest: ai/dataset/processed/train_manifest.csv
