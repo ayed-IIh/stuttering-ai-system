@@ -1,4 +1,10 @@
-"""Tests for backend.services.model_service (inference + audio preprocessing)."""
+"""Tests for backend.services.model_service (inference + audio preprocessing).
+
+Note: many of these tests use ``torchaudio.save`` to produce WAV fixtures.
+On torchaudio>=2.8 that path requires the ``torchcodec`` native runtime
+(FFmpeg). Skip the whole module when it isn't usable so the rest of the
+suite stays green on machines without FFmpeg.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +14,16 @@ from pathlib import Path
 import pytest
 import torch
 import torchaudio
+
+try:  # noqa: SIM105
+    import torchcodec  # noqa: F401
+except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
+    pytest.skip(
+        f"torchcodec runtime unavailable ({_exc.__class__.__name__}); "
+        f"audio fixtures cannot be written. Install FFmpeg and torchcodec "
+        f"to enable.",
+        allow_module_level=True,
+    )
 
 from ai.preprocessing.audio_loader import TARGET_SAMPLES
 from backend.app.config import Settings, clear_settings_cache

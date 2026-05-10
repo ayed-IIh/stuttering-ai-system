@@ -5,9 +5,10 @@ each class whose sigmoid probability ``>= threshold`` is included in
 ``predicted_classes``. The full per-class sigmoid distribution is in
 ``all_scores`` (NOT softmax — values do not sum to 1.0).
 
-DB persistence of predictions is currently disabled in this branch — the
-existing schema is single-label and migration 002 is pending (Step 9 of the
-multi-label switch).
+DB persistence: enabled. Migration ``002_multi_label_predictions.sql`` adds
+the ``prediction_classes`` child table; this module inserts one row per
+detected class via :func:`_persist_multi_label_prediction`. Failures are
+logged but never propagated to the client.
 """
 
 from __future__ import annotations
@@ -21,6 +22,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.middleware import (
@@ -162,6 +165,61 @@ def _build_prediction_response(
     )
 
 
+_INSERT_PREDICTION_CLASS_SQL = text(
+    """
+    INSERT INTO prediction_classes (prediction_id, class_label, confidence)
+    VALUES (:prediction_id, :class_label, :confidence)
+    """
+)
+
+
+async def _persist_multi_label_prediction(
+    db: AsyncSession,
+    prediction_id: uuid.UUID,
+    predicted_classes: list[dict[str, Any]],
+) -> None:
+    """Insert one row per detected class into ``prediction_classes``.
+
+    Args:
+        db: Open async DB session.
+        prediction_id: UUID of the parent ``predictions`` row. Same as the
+            request_id returned to the client.
+        predicted_classes: List of ``{class, confidence}`` dicts (the
+            ``predicted_classes`` field of the ModelService output).
+
+    Returns:
+        None. The function never raises — any database error is logged.
+    """
+    if not predicted_classes:
+        # Empty list is a valid prediction; nothing to insert.
+        return
+    try:
+        for entry in predicted_classes:
+            await db.execute(
+                _INSERT_PREDICTION_CLASS_SQL,
+                {
+                    "prediction_id": str(prediction_id),
+                    "class_label": str(entry["class"]),
+                    "confidence": float(entry["confidence"]),
+                },
+            )
+        await db.commit()
+    except SQLAlchemyError as exc:
+        logger.warning(
+            "prediction_classes persist failed for %s: %s", prediction_id, exc
+        )
+        try:
+            await db.rollback()
+        except SQLAlchemyError:
+            logger.exception("rollback also failed for %s", prediction_id)
+    except (KeyError, ValueError, TypeError) as exc:
+        logger.warning(
+            "prediction_classes payload was malformed for %s: %s",
+            prediction_id,
+            exc,
+        )
+
+
 @router.post(
     "/predict",
     response_model=PredictionResponse,
@@ -181,10 +239,11 @@ async def predict(
     db: AsyncSession = Depends(get_db),
 ) -> PredictionResponse:
     """Run multi-label inference on a single WAV upload."""
-    _ = db  # DB persistence disabled in this branch — see module docstring.
     max_size_mb = getattr(request.app.state.settings, "MAX_AUDIO_SIZE_MB", 10)
     audio_bytes = await validate_audio_upload(audio_file, max_size_mb)
-    request_id = str(uuid.uuid4())
+    # request_id and the parent predictions.id are the same UUID by design.
+    request_uuid = uuid.uuid4()
+    request_id = str(request_uuid)
     try:
         prediction = model_service.predict(audio_bytes)
     except InvalidAudioError as exc:
@@ -216,7 +275,14 @@ async def predict(
                 detail=str(exc),
             ).model_dump(),
         ) from exc
-    return _build_prediction_response(prediction, request_id)
+
+    response = _build_prediction_response(prediction, request_id)
+    # Persist the per-class breakdown. Failures are absorbed inside the helper
+    # so a flaky DB never blocks the inference response.
+    await _persist_multi_label_prediction(
+        db, request_uuid, prediction["predicted_classes"]
+    )
+    return response
 
 
 @router.get("/health", response_model=HealthResponse)
