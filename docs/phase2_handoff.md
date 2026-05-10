@@ -96,7 +96,7 @@ No Python source edits are required if the artifact layout and `config.json` key
 |--------|------|----------------------|---------------------------|
 | `GET` | `/health` | Liveness/readiness: API up and model load state | JSON: `status`, `model_loaded`, `version`, `uptime_seconds` (and related fields as implemented) |
 | `GET` | `/api/v1/classes` | Returns canonical class taxonomy for the 7-way classifier | JSON: `classes`, `label_to_id`, `id_to_label` (aligned with `shared.labels`) |
-| `POST` | `/api/v1/predict` | Accepts one WAV (`multipart/form-data`), runs inference, returns scores | JSON: `predicted_class`, `confidence_scores` (per-class probabilities), `processing_time_ms`, `model_version`, `request_id` |
+| `POST` | `/api/v1/predict` | Accepts one WAV (`multipart/form-data`), runs inference, returns multi-label scores | JSON: `predicted_classes` (list of `{class, confidence}` — may be empty), `all_scores` (per-class sigmoid probabilities — values do NOT sum to 1.0), `threshold` (decision threshold applied), `processing_time_ms`, `model_version`, `request_id`. **See `docs/api_contract.md` v2.0 for the full contract.** |
 
 *Detailed request constraints (max size, MIME, form field names) live in `docs/api_contract.md` when that branch is merged, or in OpenAPI `/docs`.*
 

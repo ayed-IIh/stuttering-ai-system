@@ -132,7 +132,7 @@ Three endpoints as defined in `docs/api_contract.md`: `POST /predict`, `GET /hea
 
 **Model Service (`backend/services/model_service.py`)**
 
-`ModelService.predict()` is the bridge between raw audio bytes and a structured prediction dict. It runs the same preprocessing steps as the training pipeline (via `audio_loader.py`), passes the waveform through `Wav2Vec2Processor`, calls the model's forward pass under `torch.no_grad()`, and applies softmax. A `threading.Lock` guards any shared state for thread safety. The service supports loading the model artifact from a local path or from S3, controlled by the `MODEL_SOURCE` environment variable.
+`ModelService.predict()` is the bridge between raw audio bytes and a structured prediction dict. It runs the same preprocessing steps as the training pipeline (via `audio_loader.py`), passes the waveform through `Wav2Vec2Processor`, calls the model's forward pass under `torch.no_grad()`, and applies sigmoid per class (NOT softmax — multi-label outputs are independent per-class probabilities and do not sum to 1.0). A `threading.Lock` guards any shared state for thread safety. The service supports loading the model artifact from a local path or from S3, controlled by the `MODEL_SOURCE` environment variable.
 
 ---
 
@@ -142,7 +142,7 @@ PostgreSQL 15 stores every prediction and tracks which model version served it.
 
 **Schema (defined in `WAE-01`, `backend/db/schema.sql`)**
 
-Two tables: `model_versions` (tracks deployed artifacts, their S3 paths, and which is currently active) and `predictions` (one row per API call, with a `JSONB confidence_scores` column storing probabilities for all 7 classes, a FK back to `model_versions`, and a unique `request_id` UUID for idempotency). Three supporting indexes cover `created_at`, `predicted_class`, and `model_version_id` — the access patterns most likely to appear in analytics queries.
+Three tables: `model_versions` (tracks deployed artifacts, their S3 paths, and which is currently active); `predictions` (one row per API call, with a `JSONB all_scores` column storing the per-class sigmoid distribution, a FK back to `model_versions`, and a unique `request_id` UUID for idempotency); and `prediction_classes` (the multi-label child table — one row per detected class, with its own sigmoid `confidence`). Supporting indexes cover `predictions.created_at`, `predictions.model_version_id`, `prediction_classes.prediction_id` (load all classes for one prediction), and `prediction_classes.class_label` (analytics queries like "all predictions where `blocks` was detected"). See `docs/db_schema.md` for the full layout.
 
 **ORM and CRUD (`backend/db/models.py`, `backend/db/crud.py`)**
 
@@ -198,7 +198,7 @@ The normalized waveform tensor is passed to `Wav2Vec2Processor.__call__()`, whic
 
 **Step 7 — Response assembly**
 
-`ModelService.predict()` returns a dict: `predicted_class` (the string label with the highest probability), `confidence_scores` (all 7 class probabilities keyed by class name), `processing_time_ms` (elapsed time from audio bytes received), and `model_version` (read from the loaded `config.json`). The route handler wraps this in a `PredictionResponse` Pydantic model.
+`ModelService.predict()` returns a dict with the v2 multi-label shape: `predicted_classes` (a list of `{class, confidence}` objects, one per class whose sigmoid probability crossed the server-side `threshold` — sorted by descending confidence, may be empty), `all_scores` (per-class sigmoid probabilities for all 7 classes keyed by class name — values do NOT sum to 1.0), `threshold` (the decision threshold actually applied), `processing_time_ms` (elapsed time from audio bytes received), and `model_version` (read from the loaded `config.json`). The route handler wraps this in a `PredictionResponse` Pydantic model. See `docs/api_contract.md` v2.0 for the wire schema.
 
 **Step 8 — Database logging**
 
