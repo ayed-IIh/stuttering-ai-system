@@ -15,15 +15,21 @@ from pathlib import Path
 import pytest
 import torch
 import torchaudio
-from packaging.version import Version
+from packaging.version import InvalidVersion, Version
 
 _TORCHCODEC_REQUIRED_FROM = Version("2.9.0")
 
 
 def _torchaudio_needs_torchcodec() -> bool:
+    """True iff installed torchaudio routes WAV save through torchcodec.
+
+    Catches only ``InvalidVersion`` (raised by ``Version`` on PEP 440-invalid
+    strings, e.g. dev/local-build tags like ``"2.9.0+cu121.dev"``). A
+    catch-all here would mask import-time bugs.
+    """
     try:
         return Version(torchaudio.__version__) >= _TORCHCODEC_REQUIRED_FROM
-    except Exception:  # pragma: no cover - dev-version strings
+    except InvalidVersion:  # pragma: no cover - dev-version strings
         return True
 
 
