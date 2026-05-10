@@ -95,18 +95,37 @@ def fallback_settings() -> Settings:
 
 
 def test_predict_fallback_three_wav_files(fallback_settings: Settings, three_wav_fixtures: list[Path]):
+    """ModelService.predict() must return the multi-label envelope.
+
+    Old single-label fields (``predicted_class``, ``confidence_scores``) were
+    removed when the service switched to BCE + sigmoid + threshold. The new
+    shape is ``{predicted_classes, all_scores, threshold,
+    processing_time_ms, model_version}``.
+    """
+    from shared.labels import CLASS_LABELS, NUM_CLASSES
+
     svc = ModelService(fallback_settings)
     assert svc.is_loaded()
     for p in three_wav_fixtures:
         data = p.read_bytes()
         out = svc.predict(data)
         assert set(out.keys()) == {
-            "predicted_class",
-            "confidence_scores",
+            "predicted_classes",
+            "all_scores",
+            "threshold",
             "processing_time_ms",
             "model_version",
         }
-        assert isinstance(out["confidence_scores"], dict)
+        # all_scores must be a 7-key dict matching the canonical taxonomy.
+        assert isinstance(out["all_scores"], dict)
+        assert set(out["all_scores"].keys()) == set(CLASS_LABELS)
+        assert len(out["all_scores"]) == NUM_CLASSES
+        # predicted_classes is a (possibly empty) list of {class, confidence}.
+        assert isinstance(out["predicted_classes"], list)
+        for entry in out["predicted_classes"]:
+            assert entry["class"] in CLASS_LABELS
+            assert 0.0 <= float(entry["confidence"]) <= 1.0
+        assert 0.0 <= float(out["threshold"]) <= 1.0
         assert out["model_version"] == "test-0"
         assert out["processing_time_ms"] >= 0
 

@@ -47,7 +47,9 @@ empty set) may be returned.
 | `audio_file` | binary (file) | **Yes** | WAV. MIME must be `audio/wav` or `audio/x-wav`. Magic bytes must start with `RIFF`. Max size from `MAX_AUDIO_SIZE_MB` (default 10 MB). |
 
 There is **no** `sample_rate_hint` field (removed in v2.0). The server resamples
-internally to `audio_loader.TARGET_SAMPLES` / `target_sr`.
+internally to the target sample rate (`audio_loader.target_sr`, default 16 kHz)
+and then pads/truncates the waveform to `audio_loader.TARGET_SAMPLES`
+(a target sample **count**, not a sample rate).
 
 #### Success response (200 OK)
 
