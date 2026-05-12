@@ -18,3 +18,4 @@ pydantic-settings==2.2.1
 structlog==24.4.0
 soundfile==0.12.1
 tqdm==4.66.4
+python-dotenv==1.0.0

@@ -152,10 +152,12 @@ class ModelService:
         if self._loaded:
             return
         started_at = time.perf_counter()
-        if self._settings.MODEL_SOURCE != "local":
-            raise ModelNotLoadedError("Only MODEL_SOURCE=local is implemented for ModelService")
+        # trigger S3 download before resolving paths
+        if self._settings.MODEL_SOURCE == "s3":
+            from backend.app.config import download_model_if_needed
+            download_model_if_needed(self._settings)
 
-        artifact_dir, model_path, config_path = self._resolve_artifact_paths(self._settings.MODEL_PATH)
+        artifact_dir, model_path, config_path = self._resolve_artifact_paths(str(self._settings.resolved_model_path))
         if not config_path.exists() or not model_path.exists():
             if self._settings.PRODUCTION_MODE:
                 raise ModelNotLoadedError(
