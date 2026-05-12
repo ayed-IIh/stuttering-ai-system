@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Literal
 
-from pathlib import Path
-from fastapi import logger
 from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
