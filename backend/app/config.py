@@ -4,7 +4,7 @@ import json
 from functools import lru_cache
 from typing import Any, Literal
 
-from anyio import Path
+from pathlib import Path
 from fastapi import logger
 from pydantic import Field, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -141,6 +141,7 @@ def download_model_if_needed(settings: Settings) -> None:
     # Import here to avoid a hard boto3 dependency when running locally
     from scripts.download_model import download_and_verify
     import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
 
     cache_path = Path(settings.MODEL_CACHE_DIR) / settings.MODEL_VERSION
 
@@ -161,7 +162,10 @@ def download_model_if_needed(settings: Settings) -> None:
         cache_path,
     )
 
-    s3_client = boto3.client("s3")
+    try:
+        s3_client = boto3.client("s3")
+    except (BotoCoreError, ClientError) as exc:
+        raise RuntimeError(f"Failed to create S3 client: {exc}") from exc
     # download_and_verify handles mkdir, download, and MD5 check
     download_and_verify(s3_client, settings.MODEL_VERSION, cache_path)
 

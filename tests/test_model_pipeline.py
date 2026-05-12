@@ -228,6 +228,6 @@ class TestModelLoader:
 
         from backend.app.model_loader import load_model_and_config
 
-        loaded_state, loaded_config = load_model_and_config()
+        loaded_state, _loaded_config = load_model_and_config()
         mock_download.assert_called_once()
         assert "layer.bias" in loaded_state
