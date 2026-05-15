@@ -119,6 +119,18 @@ class FeedbackRequest(BaseModel):
     @field_validator("correct_labels")
     @classmethod
     def validate_correct_labels(cls, value: list[str]) -> list[str]:
+        """
+        Validate that each label in the provided list is a recognized class label.
+        
+        Parameters:
+            value (list[str]): List of label strings to validate.
+        
+        Returns:
+            list[str]: The original list of labels if all are valid.
+        
+        Raises:
+            ValueError: If any label is not in CLASS_LABELS; the error message lists the invalid labels and the allowed labels.
+        """
         invalid = [label for label in value if label not in CLASS_LABELS]
         if invalid:
             allowed = ", ".join(CLASS_LABELS)
@@ -352,6 +364,19 @@ async def _persist_multi_label_prediction(
     },
 )
 async def feedback(payload: FeedbackRequest, background_tasks: BackgroundTasks) -> FeedbackResponse:
+    """
+    Accepts a feedback payload containing base64-encoded audio and labels, validates and decodes the audio, enqueues persistence as a background task, and acknowledges acceptance.
+    
+    Parameters:
+        payload (FeedbackRequest): Feedback request containing `audio_base64`, `correct_labels`, `original_prediction`, and `model_version`.
+        background_tasks (BackgroundTasks): FastAPI background task manager used to schedule saving the feedback sample.
+    
+    Returns:
+        FeedbackResponse: Response with `status` set to `"accepted"` when the payload is accepted and queued.
+    
+    Raises:
+        HTTPException: Raised with status code 400 when `audio_base64` is not valid base64 or decodes to an empty byte sequence.
+    """
     try:
         audio_bytes = b64decode(payload.audio_base64, validate=True)
     except (Base64DecodeError, ValueError) as exc:

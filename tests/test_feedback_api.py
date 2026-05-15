@@ -16,10 +16,27 @@ from backend.app.middleware import RequestLoggingMiddleware, register_exception_
 
 class _ModelOK:
     def is_loaded(self) -> bool:
+        """
+        Indicates whether the model has finished loading.
+        
+        Returns:
+            True if the model is loaded, False otherwise. This implementation always returns True.
+        """
         return True
 
 
 def _make_app() -> FastAPI:
+    """
+    Create and configure a FastAPI application for testing the feedback API.
+    
+    The returned app has RequestLoggingMiddleware attached, exception handlers registered,
+    and routes from the backend router mounted under the `/api/v1` prefix. The application
+    state is prepopulated for tests: `model_service` is an instance of `_ModelOK`, `db_service`
+    is `None`, `service_version` is `"0.1.0-test"`, and `settings` contains a test DB URL.
+    
+    Returns:
+        FastAPI: A configured FastAPI application instance ready for use in tests.
+    """
     app = FastAPI()
     app.add_middleware(RequestLoggingMiddleware)
     register_exception_handlers(app)
@@ -32,6 +49,21 @@ def _make_app() -> FastAPI:
 
 
 def _payload(**overrides: Any) -> dict[str, Any]:
+    """
+    Builds a default feedback JSON payload and applies any provided overrides.
+    
+    The payload includes default fields:
+    - `audio_base64`: base64-encoded bytes for the sample audio (`b"RIFF-test-audio"`).
+    - `correct_labels`: `["blocks"]`
+    - `original_prediction`: `"fluent"`
+    - `model_version`: `"model-v1"`
+    
+    Parameters:
+        overrides: Keyword arguments to replace or add fields to the default payload.
+    
+    Returns:
+        A dictionary representing the feedback JSON payload with overrides applied.
+    """
     payload = {
         "audio_base64": base64.b64encode(b"RIFF-test-audio").decode("ascii"),
         "correct_labels": ["blocks"],

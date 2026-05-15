@@ -11,6 +11,15 @@ VALID_FEEDBACK_LABELS: tuple[str, ...] = CLASS_LABELS
 
 
 def feedback_samples_dir(base_dir: Path | None = None) -> Path:
+    """
+    Compute the root "feedback_samples" directory under the given base directory or the current working directory.
+    
+    Parameters:
+        base_dir (Path | None): Optional base directory; when None, the current working directory is used.
+    
+    Returns:
+        Path: Path to the "feedback_samples" directory (base_dir / "feedback_samples").
+    """
     return (base_dir or Path.cwd()) / "feedback_samples"
 
 
@@ -22,6 +31,17 @@ def save_feedback_sample(
     model_version: str,
     base_dir: Path | None = None,
 ) -> None:
+    """
+    Persist an audio sample and its metadata into label-specific subdirectories under the feedback_samples directory.
+    
+    Parameters:
+        audio_bytes (bytes): Raw audio data to save as a .wav file.
+        correct_labels (list[str]): Labels to associate with this sample; the function creates one .wav and one .json metadata file inside each corresponding label subdirectory.
+        original_prediction (str): The model's original predicted label to record in the metadata.
+        model_version (str): Identifier of the model version to record in the metadata.
+        base_dir (Path | None): Optional root directory to use instead of the current working directory; the function stores files under `<base_dir or cwd>/feedback_samples`.
+    
+    """
     timestamp = datetime.now(timezone.utc).isoformat()
     sample_id = uuid.uuid4().hex
     root = feedback_samples_dir(base_dir)
