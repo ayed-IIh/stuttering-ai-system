@@ -18,11 +18,13 @@ import json
 import logging
 import time
 import uuid
+from base64 import b64decode
+from binascii import Error as Base64DecodeError
 import wave
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Request, UploadFile
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -32,6 +34,7 @@ from backend.app.middleware import (
     validate_audio_upload,
 )
 from backend.db.database import get_db
+from backend.services.feedback_service import save_feedback_sample
 from backend.services.model_service import (
     InvalidAudioError,
     ModelNotLoadedError,
@@ -102,6 +105,32 @@ class ClassesResponse(BaseModel):
     classes: list[str]
     label_to_id: dict[str, int]
     id_to_label: dict[str, str]
+
+
+class FeedbackRequest(BaseModel):
+    audio_base64: str = Field(
+        validation_alias=AliasChoices("audio_base64", "audio_bytes", "audio"),
+        min_length=1,
+    )
+    correct_labels: list[str] = Field(min_length=1)
+    original_prediction: str = Field(min_length=1)
+    model_version: str = Field(min_length=1)
+
+    @field_validator("correct_labels")
+    @classmethod
+    def validate_correct_labels(cls, value: list[str]) -> list[str]:
+        invalid = [label for label in value if label not in CLASS_LABELS]
+        if invalid:
+            allowed = ", ".join(CLASS_LABELS)
+            raise ValueError(
+                f"Invalid correct_labels value(s): {invalid}. "
+                f"Valid labels are: {allowed}."
+            )
+        return value
+
+
+class FeedbackResponse(BaseModel):
+    status: str
 
 
 class ErrorResponse(BaseModel):
@@ -312,6 +341,46 @@ async def _persist_multi_label_prediction(
             prediction_id,
             exc,
         )
+
+
+@router.post(
+    "/feedback",
+    response_model=FeedbackResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        422: {"model": ErrorResponse},
+    },
+)
+async def feedback(payload: FeedbackRequest, background_tasks: BackgroundTasks) -> FeedbackResponse:
+    try:
+        audio_bytes = b64decode(payload.audio_base64, validate=True)
+    except (Base64DecodeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=ErrorResponse(
+                error_code="INVALID_REQUEST",
+                message="Malformed base64 audio payload",
+                detail="audio_base64 must be valid base64-encoded audio bytes",
+            ).model_dump(),
+        ) from exc
+    if not audio_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail=ErrorResponse(
+                error_code="INVALID_REQUEST",
+                message="Empty audio payload",
+                detail="audio_base64 must decode to at least one byte",
+            ).model_dump(),
+        )
+
+    background_tasks.add_task(
+        save_feedback_sample,
+        audio_bytes=audio_bytes,
+        correct_labels=payload.correct_labels,
+        original_prediction=payload.original_prediction,
+        model_version=payload.model_version,
+    )
+    return FeedbackResponse(status="accepted")
 
 
 @router.post(
