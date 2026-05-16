@@ -127,7 +127,7 @@ The `docker-compose.yml` file is intended for production deployment.
    ```bash
    docker compose up --build -d
    docker compose ps
-   curl http://127.0.0.1:8001/health
+   curl http://127.0.0.1:8001/api/v1/health?model_loaded=true
    ```
 
 The backend healthcheck will fail if model files are missing or invalid. Check logs with `docker compose logs backend` if the service does not become healthy.
