@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from shared.labels import CLASS_LABELS, NUM_CLASSES
@@ -101,6 +102,23 @@ def test_predict_all_seven_classes_above_threshold(
     assert response.status_code == 200
     assert len(response.json()["predicted_classes"]) == NUM_CLASSES
     mock.next_scores = None
+
+
+def test_predict_handles_two_simultaneous_requests(client, fixture_wav_path: Path) -> None:
+    data = fixture_wav_path.read_bytes()
+
+    def post_predict():
+        return client.post(
+            "/api/v1/predict",
+            files={"audio_file": ("silence.wav", data, "audio/wav")},
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = list(executor.map(lambda _: post_predict(), range(2)))
+
+    assert [response.status_code for response in responses] == [200, 200]
+    for response in responses:
+        assert set(response.json()["all_scores"].keys()) == set(CLASS_LABELS)
 
 
 def test_predict_invalid_mime_type_returns_415(

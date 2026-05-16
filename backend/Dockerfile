@@ -12,7 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY backend/ /app/backend/
 COPY ai/ /app/ai/
+COPY shared/ /app/shared/
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--log-level", "warning"]
