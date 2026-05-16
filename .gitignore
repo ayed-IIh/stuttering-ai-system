@@ -66,4 +66,5 @@ ai/models/checkpoints/
 .env
 .env.*
 !.env.example
+!.env.production
 

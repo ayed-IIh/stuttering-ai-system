@@ -139,6 +139,21 @@ class Settings(BaseSettings):
         self.MODEL_VERSION = version
         return self
 
+    @model_validator(mode="after")
+    def validate_production_model_config(self) -> Settings:
+        if (
+            self.PRODUCTION_MODE
+            and self.MODEL_SOURCE == "local"
+            and not self.MODEL_PATH.strip()
+        ):
+            raise ValueError(
+                "MODEL_PATH is required when PRODUCTION_MODE=true and "
+                "MODEL_SOURCE='local'. Set it to the directory containing "
+                "model_inference.pt and config.json."
+            )
+        self.MODEL_PATH = self.MODEL_PATH.strip()
+        return self
+
     @property
     def cors_allowed_origins(self) -> list[str]:
         """Origins passed to CORSMiddleware (never `['*']` in production)."""
