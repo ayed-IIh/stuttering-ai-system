@@ -100,6 +100,38 @@ Services:
 - postgres: `localhost:5432`
 - pgadmin: `http://127.0.0.1:5050`
 
+## Docker Run (Production Stack)
+The `docker-compose.yml` file is intended for production deployment.
+
+### Prerequisites
+
+1. **Environment file**: Copy `.env.example` to `.env` and configure all variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with production values for POSTGRES_*, DATABASE_URL, MODEL_PATH, etc.
+   ```
+
+2. **Model artifacts**: The backend service requires model files in the `./models` directory:
+   ```bash
+   mkdir -p ./models
+   # Place model_inference.pt and config.json in ./models/
+   # Ensure files have read permissions (chmod 644 ./models/*)
+   ```
+
+   Export trained model artifacts using:
+   ```bash
+   python -m ai.training.checkpoint_utils export --checkpoint_path <checkpoint.pt> --output_dir ./models
+   ```
+
+3. **Start services**:
+   ```bash
+   docker compose up --build -d
+   docker compose ps
+   curl http://127.0.0.1:8001/health
+   ```
+
+The backend healthcheck will fail if model files are missing or invalid. Check logs with `docker compose logs backend` if the service does not become healthy.
+
 ## Data and Training Commands
 Validate inventory audio:
 

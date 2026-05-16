@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     env_file:
-      - .env.production
+      - .env
     ports:
       # AI service is reachable only from the Oracle host itself.
       # Laravel can proxy/call http://127.0.0.1:8001 without exposing this port publicly.
