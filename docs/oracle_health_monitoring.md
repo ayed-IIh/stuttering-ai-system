@@ -43,7 +43,11 @@ export MONITOR_ALERT_EMAIL_FROM="monitor@your-domain.example"
 
 Email through SMTP:
 
+Store secrets in a restricted environment file to avoid exposing them in shell
+history. Create a file such as `~/.monitor_env` with permissions set to 600:
+
 ```bash
+# ~/.monitor_env
 export MONITOR_ALERT_EMAIL_TO="team@example.com"
 export MONITOR_ALERT_EMAIL_FROM="monitor@your-domain.example"
 export MONITOR_SMTP_HOST="smtp.example.com"
@@ -53,9 +57,22 @@ export MONITOR_SMTP_USERNAME="smtp-user"
 export MONITOR_SMTP_PASSWORD="smtp-password"
 ```
 
+Set permissions and source from your shell or cron:
+
+```bash
+chmod 600 ~/.monitor_env
+source ~/.monitor_env
+```
+
+**Note:** Avoid exporting secrets (MONITOR_SMTP_PASSWORD, MONITOR_SMTP_USERNAME,
+MONITOR_SMTP_HOST, MONITOR_SMTP_PORT, MONITOR_SMTP_STARTTLS,
+MONITOR_ALERT_EMAIL_TO, MONITOR_ALERT_EMAIL_FROM) directly in your shell to
+prevent them from being saved in shell history.
+
 To make these variables available to cron, place them above the cron command in
 `ops/cron/stuttering-ai-health-monitor.cron` on the server before installing it,
-or source them from a root-readable environment file in the cron command.
+or source them from an environment file readable by the user running that cron
+job in the cron command.
 
 ## Logs And State
 

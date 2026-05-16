@@ -204,11 +204,16 @@ def send_email_alert(subject: str, body: str) -> bool:
         return True
 
     sendmail = os.getenv("MONITOR_SENDMAIL", "/usr/sbin/sendmail").strip()
-    subprocess.run(
-        [sendmail, "-t", "-oi"],
-        input=msg.as_bytes(),
-        check=True,
-    )
+    try:
+        subprocess.run(
+            [sendmail, "-t", "-oi"],
+            input=msg.as_bytes(),
+            check=True,
+            timeout=30,
+        )
+    except subprocess.TimeoutExpired as exc:
+        sys.stderr.write(f"sendmail timeout after {exc.timeout}s: {exc}\n")
+        raise
     return True
 
 
@@ -280,10 +285,13 @@ def release_lock(path: Path, fd: int | None) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Monitor Laravel and AI service health endpoints.")
     parser.add_argument("--log-file", default=os.getenv("MONITOR_LOG_FILE", "/var/log/stuttering-ai/uptime.log"))
-    parser.add_argument("--state-file", default=os.getenv("MONITOR_STATE_FILE", "/var/lib/stuttering-ai/monitor_state.json"))
+    parser.add_argument(
+        "--state-file",
+        default=os.getenv("MONITOR_STATE_FILE", "/var/lib/stuttering-ai/monitor_state.json"),
+    )
     parser.add_argument("--lock-file", default=os.getenv("MONITOR_LOCK_FILE", "/tmp/stuttering-ai-monitor.lock"))
     parser.add_argument("--timeout-sec", type=float, default=float(os.getenv("MONITOR_TIMEOUT_SEC", "5")))
-    parser.add_argument("--stale-lock-sec", type=int, default=int(os.getenv("MONITOR_STALE_LOCK_SEC", "240")))
+    parser.add_argument("--stale-lock-sec", type=int, default=int(os.getenv("MONITOR_STALE_LOCK_SEC", "600")))
     args = parser.parse_args()
 
     lock_path = Path(args.lock_file)
@@ -297,8 +305,8 @@ def main() -> int:
         append_log(Path(args.log_file), results)
         previous_state = load_state(Path(args.state_file))
         alerts, next_state = build_alerts(results, previous_state)
-        send_alerts(alerts)
         save_state(Path(args.state_file), next_state)
+        send_alerts(alerts)
         return 0
     except Exception as exc:
         timestamp = utc_now()
