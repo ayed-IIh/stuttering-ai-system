@@ -104,14 +104,17 @@ def test_predict_all_seven_classes_above_threshold(
     mock.next_scores = None
 
 
-def test_predict_handles_two_simultaneous_requests(client, fixture_wav_path: Path) -> None:
+def test_predict_handles_two_simultaneous_requests(client, test_app, fixture_wav_path: Path) -> None:
+    from fastapi.testclient import TestClient
+
     data = fixture_wav_path.read_bytes()
 
     def post_predict():
-        return client.post(
-            "/api/v1/predict",
-            files={"audio_file": ("silence.wav", data, "audio/wav")},
-        )
+        with TestClient(test_app) as local_client:
+            return local_client.post(
+                "/api/v1/predict",
+                files={"audio_file": ("silence.wav", data, "audio/wav")},
+            )
 
     with ThreadPoolExecutor(max_workers=2) as executor:
         responses = list(executor.map(lambda _: post_predict(), range(2)))

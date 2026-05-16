@@ -151,6 +151,7 @@ class Settings(BaseSettings):
                 "MODEL_SOURCE='local'. Set it to the directory containing "
                 "model_inference.pt and config.json."
             )
+        self.MODEL_PATH = self.MODEL_PATH.strip()
         return self
 
     @property

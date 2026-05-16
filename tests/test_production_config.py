@@ -7,6 +7,9 @@ import pytest
 from backend.app.config import Settings
 from backend.services.model_service import ModelNotLoadedError, ModelService
 
+# Compute repo root for stable file resolution
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 
 def test_production_requires_local_model_path() -> None:
     with pytest.raises(ValueError, match="MODEL_PATH is required"):
@@ -31,7 +34,7 @@ def test_production_missing_model_artifacts_fail_startup(tmp_path: Path) -> None
 
 
 def test_env_production_has_required_production_values() -> None:
-    body = Path(".env.production").read_text(encoding="utf-8")
+    body = (REPO_ROOT / ".env.production").read_text(encoding="utf-8")
 
     assert "PRODUCTION_MODE=true" in body
     assert "LOG_LEVEL=WARNING" in body
@@ -39,7 +42,7 @@ def test_env_production_has_required_production_values() -> None:
 
 
 def test_dockerfile_runs_two_workers_with_warning_logs() -> None:
-    dockerfile = Path("backend/Dockerfile").read_text(encoding="utf-8")
+    dockerfile = (REPO_ROOT / "backend" / "Dockerfile").read_text(encoding="utf-8")
 
     assert '"--workers", "2"' in dockerfile
     assert '"--log-level", "warning"' in dockerfile
