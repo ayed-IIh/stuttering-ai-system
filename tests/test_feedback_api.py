@@ -35,7 +35,7 @@ def _payload(**overrides: Any) -> dict[str, Any]:
     payload = {
         "audio_base64": base64.b64encode(b"RIFF-test-audio").decode("ascii"),
         "correct_labels": ["blocks"],
-        "original_prediction": "fluent",
+        "original_prediction": ["fluent"],
         "model_version": "model-v1",
     }
     payload.update(overrides)
@@ -64,7 +64,7 @@ def test_feedback_valid_request_returns_quickly_and_saves_files(tmp_path: Path, 
 
     metadata = json.loads(metadata_files[0].read_text(encoding="utf-8"))
     assert metadata["timestamp"]
-    assert metadata["original_prediction"] == "fluent"
+    assert metadata["original_prediction"] == ["fluent"]
     assert metadata["correct_labels"] == ["blocks"]
     assert metadata["model_version"] == "model-v1"
 

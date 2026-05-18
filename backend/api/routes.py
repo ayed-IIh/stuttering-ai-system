@@ -113,7 +113,7 @@ class FeedbackRequest(BaseModel):
         min_length=1,
     )
     correct_labels: list[str] = Field(min_length=1)
-    original_prediction: str = Field(min_length=1)
+    original_prediction: list[str] = Field(min_length=1)
     model_version: str = Field(min_length=1)
 
     @field_validator("correct_labels")
@@ -124,6 +124,18 @@ class FeedbackRequest(BaseModel):
             allowed = ", ".join(CLASS_LABELS)
             raise ValueError(
                 f"Invalid correct_labels value(s): {invalid}. "
+                f"Valid labels are: {allowed}."
+            )
+        return value
+
+    @field_validator("original_prediction")
+    @classmethod
+    def validate_original_prediction(cls, value: list[str]) -> list[str]:
+        invalid = [label for label in value if label not in CLASS_LABELS]
+        if invalid:
+            allowed = ", ".join(CLASS_LABELS)
+            raise ValueError(
+                f"Invalid original_prediction value(s): {invalid}. "
                 f"Valid labels are: {allowed}."
             )
         return value

@@ -18,7 +18,7 @@ def save_feedback_sample(
     *,
     audio_bytes: bytes,
     correct_labels: list[str],
-    original_prediction: str,
+    original_prediction: list[str],
     model_version: str,
     base_dir: Path | None = None,
 ) -> None:
