@@ -386,7 +386,9 @@ class ModelService:
                 raise PredictionError(f"Inference failed: {exc}") from exc
 
     def _decode_and_preprocess_wav(self, audio_bytes: bytes) -> Any:
-        """Decode WAV bytes and apply the same core steps as ``audio_loader.load_audio`` (inference: no trim)."""
+        """Decode WAV and match the training pipeline (ai/training/dataloader.py:ManifestAudioDataset):
+        decode → mean to mono → squeeze → resample. No peak-normalize, no pad/truncate —
+        the Wav2Vec2Processor handles padding downstream."""
         if not audio_bytes:
             raise InvalidAudioError("Audio payload is empty")
 
@@ -398,18 +400,16 @@ class ModelService:
         except Exception as exc:
             raise InvalidAudioError(f"Invalid or undecodable WAV: {exc}") from exc
 
-        waveform = waveform.to(torch.float32)
         if waveform.shape[0] > 1:
             waveform = waveform.mean(dim=0, keepdim=True)
+        waveform = waveform.squeeze(0)
 
         target_sr = self._target_sample_rate
         if int(native_sr) != target_sr:
-            waveform = TAF.resample(waveform, orig_freq=int(native_sr), new_freq=target_sr)
+            resampler = torchaudio.transforms.Resample(int(native_sr), target_sr)
+            waveform = resampler(waveform.unsqueeze(0)).squeeze(0)
 
-        waveform = normalize_waveform(waveform, method="peak")
-        waveform = pad_or_truncate(
-            waveform, sr=target_sr, max_duration_sec=self._max_duration_sec
-        )
+        waveform = waveform.unsqueeze(0)
         return waveform.to(torch.float32)
 
     def _decode_wav_bytes_wave_only(self, audio_bytes: bytes) -> Any:
