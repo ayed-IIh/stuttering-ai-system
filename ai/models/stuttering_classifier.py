@@ -63,6 +63,11 @@ class StutteringClassifier(nn.Module):
         super().__init__()
         self.config = config
         self.encoder = Wav2Vec2Model.from_pretrained(config.model_name)
+        # Enable gradient checkpointing on the encoder to fit large variants
+        # (XLS-R 300m/1b/2b) in 24 GB VRAM. Saves ~80% activation memory at
+        # ~20% compute overhead — has no effect on output, only memory/time.
+        if hasattr(self.encoder, "gradient_checkpointing_enable"):
+            self.encoder.gradient_checkpointing_enable()
         hidden_size = self.encoder.config.hidden_size
 
         if config.freeze_encoder:
