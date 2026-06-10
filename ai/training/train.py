@@ -184,7 +184,13 @@ def run_training(
     device = _get_device(device_cfg)
 
     model_cfg = raw["model"]
-    processor = Wav2Vec2Processor.from_pretrained(model_cfg["model_name"])
+    try:
+        processor = Wav2Vec2Processor.from_pretrained(model_cfg["model_name"])
+    except (OSError, EnvironmentError):
+        # XLS-R and other encoder-only checkpoints ship without a tokenizer.
+        # For classification we only need the feature extractor.
+        from transformers import Wav2Vec2FeatureExtractor
+        processor = Wav2Vec2FeatureExtractor.from_pretrained(model_cfg["model_name"])
     model = _build_model(raw, device)
 
     batch_size = int(training["batch_size"])

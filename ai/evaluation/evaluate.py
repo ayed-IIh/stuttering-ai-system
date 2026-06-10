@@ -171,7 +171,13 @@ def main() -> None:
     num_workers = int(training.get("num_workers", 0))
 
     model_name = str(cfg["model"]["model_name"])
-    processor = Wav2Vec2Processor.from_pretrained(model_name)
+    try:
+        processor = Wav2Vec2Processor.from_pretrained(model_name)
+    except (OSError, EnvironmentError):
+        # XLS-R and other encoder-only checkpoints ship without a tokenizer.
+        # For classification we only need the feature extractor.
+        from transformers import Wav2Vec2FeatureExtractor
+        processor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
 
     loader = get_dataloader(
         manifest_path,

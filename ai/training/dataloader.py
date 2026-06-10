@@ -140,7 +140,9 @@ def get_dataloader(
     label/class_label/class. Labels must match keys in ``label_to_id``.
     """
     path = Path(manifest_path)
-    sr = int(processor.feature_extractor.sampling_rate)
+    # Wav2Vec2Processor exposes sampling_rate via .feature_extractor;
+    # Wav2Vec2FeatureExtractor (used directly for encoder-only checkpoints) exposes it on itself.
+    sr = int(getattr(processor, "sampling_rate", None) or processor.feature_extractor.sampling_rate)
     dataset = ManifestAudioDataset(path, label_to_id, target_sample_rate=sr)
 
     def collate(batch: list[dict[str, Any]]) -> dict[str, torch.Tensor]:
