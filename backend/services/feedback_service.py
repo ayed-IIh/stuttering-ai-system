@@ -18,19 +18,27 @@ from __future__ import annotations
 
 import base64
 import binascii
+import io
 import json
 import logging
 import threading
 import uuid
+import wave
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from shared.labels import CLASS_LABELS
 
 logger = logging.getLogger(__name__)
 
 # Mirror the mobile-side cap (MAX_FEEDBACK_AUDIO_BYTES = 5 MB) so we reject
 # oversized payloads rather than writing them to disk.
 MAX_AUDIO_BYTES = 5 * 1024 * 1024
+
+# Valid stuttering classes — corrections outside this set would poison the
+# retraining corpus, so they are rejected at the door.
+VALID_LABELS = frozenset(str(label) for label in CLASS_LABELS)
 
 
 class FeedbackError(Exception):
@@ -85,7 +93,8 @@ class FeedbackStore:
     ) -> dict:
         """Decode + store one correction. Returns the stored manifest record.
 
-        Raises ``FeedbackError`` on invalid or oversized audio.
+        Raises ``FeedbackError`` on invalid/oversized audio, non-WAV payloads,
+        empty/unknown ``correct_labels``, or a failed disk write.
         """
         try:
             audio_bytes = base64.b64decode(audio_base64, validate=True)
@@ -97,6 +106,28 @@ class FeedbackStore:
             raise FeedbackError(
                 f"audio exceeds {MAX_AUDIO_BYTES} bytes (got {len(audio_bytes)})"
             )
+        # The payload is stored as *.wav and later read for retraining, so make
+        # sure it really is decodable WAV audio — not arbitrary bytes.
+        try:
+            with wave.open(io.BytesIO(audio_bytes), "rb") as wav_file:
+                if wav_file.getnchannels() <= 0 or wav_file.getframerate() <= 0:
+                    raise FeedbackError("audio is not a valid WAV file")
+        except wave.Error as exc:
+            raise FeedbackError(f"audio is not a valid WAV file: {exc}") from exc
+
+        # Labels feed the retraining corpus — reject empty/unknown ones up front.
+        norm_correct = _normalize_labels(correct_labels)
+        if not norm_correct:
+            raise FeedbackError("correct_labels must contain at least one label")
+        unknown = sorted(set(norm_correct) - VALID_LABELS)
+        if unknown:
+            raise FeedbackError(f"unknown correct_labels: {', '.join(unknown)}")
+        norm_original = _normalize_labels(original_prediction)
+        unknown_orig = sorted(set(norm_original) - VALID_LABELS)
+        if unknown_orig:
+            raise FeedbackError(
+                f"unknown original_prediction: {', '.join(unknown_orig)}"
+            )
 
         feedback_id = uuid.uuid4().hex
         created_at = datetime.now(timezone.utc).isoformat()
@@ -106,17 +137,24 @@ class FeedbackStore:
             "id": feedback_id,
             "created_at": created_at,
             "audio_file": f"audio/{audio_name}",
-            "correct_labels": _normalize_labels(correct_labels),
-            "original_prediction": _normalize_labels(original_prediction),
+            "correct_labels": norm_correct,
+            "original_prediction": norm_original,
             "model_version": str(model_version),
             "audio_bytes": len(audio_bytes),
         }
 
         self._ensure_dirs()
-        with self._lock:
-            (self.audio_dir / audio_name).write_bytes(audio_bytes)
-            with self.manifest_path.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        audio_path = self.audio_dir / audio_name
+        # Audio + manifest must persist as a unit. On any I/O failure, remove a
+        # half-written audio file so it can't orphan or corrupt the corpus.
+        try:
+            with self._lock:
+                audio_path.write_bytes(audio_bytes)
+                with self.manifest_path.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except OSError as exc:
+            audio_path.unlink(missing_ok=True)
+            raise FeedbackError(f"failed to persist feedback: {exc}") from exc
 
         logger.info(
             "Stored HITL feedback %s (%d bytes, correct=%s, was=%s)",

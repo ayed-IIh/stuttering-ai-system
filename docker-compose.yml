@@ -24,15 +24,19 @@ services:
       - .env
     ports:
       - "8000:8000"
+    # The DB is OPTIONAL (predictions work without it), so the backend must not
+    # block on Postgres health. Wait only for the container to start, so a slow
+    # or absent DB never gates inference startup.
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_started
     volumes:
       # Persist HITL therapist corrections across restarts.
       - feedback_data:/app/feedback_data
     healthcheck:
-      # Lets dependents (and the mobile stack) wait until the model is loaded.
-      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""]
+      # Healthy only once the model is actually loaded (not just HTTP 200) — a
+      # 200 /health can still report model_loaded:false during startup.
+      test: ["CMD-SHELL", "python -c \"import json,sys,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5); p=json.load(r); sys.exit(0 if r.status==200 and p.get('model_loaded') is True else 1)\""]
       interval: 15s
       timeout: 10s
       retries: 5

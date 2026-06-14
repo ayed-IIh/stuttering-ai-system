@@ -103,6 +103,38 @@ def test_feedback_rejects_invalid_base64(client) -> None:
     assert response.json()["error_code"] == "INVALID_FEEDBACK"
 
 
+def test_feedback_rejects_non_wav_audio(client) -> None:
+    """Valid base64 but non-WAV bytes must be rejected (corpus integrity)."""
+    audio_b64 = base64.b64encode(b"not a wav file body at all").decode("ascii")
+    response = client.post(
+        "/api/v1/feedback",
+        json={
+            "audio_base64": audio_b64,
+            "correct_labels": ["blocks"],
+            "original_prediction": [],
+            "model_version": "v3.0",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_FEEDBACK"
+
+
+def test_feedback_rejects_unknown_label(client, fixture_wav_path: Path) -> None:
+    """A correction with a label outside the taxonomy must be rejected."""
+    audio_b64 = base64.b64encode(fixture_wav_path.read_bytes()).decode("ascii")
+    response = client.post(
+        "/api/v1/feedback",
+        json={
+            "audio_base64": audio_b64,
+            "correct_labels": ["not_a_real_class"],
+            "original_prediction": ["fluent"],
+            "model_version": "v3.0",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_FEEDBACK"
+
+
 def test_predict_invalid_mime_type_returns_400(client, fixture_wav_path: Path) -> None:
     """Invalid MIME is rejected with 415 Unsupported Media Type (middleware contract)."""
     data = fixture_wav_path.read_bytes()

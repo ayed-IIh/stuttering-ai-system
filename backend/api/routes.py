@@ -90,8 +90,8 @@ class FeedbackRequest(BaseModel):
     """
 
     audio_base64: str
-    correct_labels: list[Any] = []
-    original_prediction: list[Any] = []
+    correct_labels: str | dict[str, Any] | list[Any] | None = None
+    original_prediction: str | dict[str, Any] | list[Any] | None = None
     model_version: str = "unknown"
 
 

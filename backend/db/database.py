@@ -1,6 +1,7 @@
 import os
 import logging
 from typing import AsyncGenerator, Optional
+from urllib.parse import quote
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
@@ -41,9 +42,14 @@ if _missing_vars:
     async_session_maker = None
     DB_ENABLED = False
 else:
+    # URL-escape the user/password/db so credentials containing reserved
+    # characters (@ : / # etc.) don't corrupt the DSN.
+    _user = quote(os.getenv("POSTGRES_USER", ""), safe="")
+    _password = quote(os.getenv("POSTGRES_PASSWORD", ""), safe="")
+    _database = quote(os.getenv("POSTGRES_DB", ""), safe="")
     DATABASE_URL = (
-        f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}"
-        f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+        f"postgresql+asyncpg://{_user}:{_password}"
+        f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{_database}"
     )
     AsyncEngine = create_async_engine(DATABASE_URL, echo=_DB_ECHO)
     async_session_maker = async_sessionmaker(AsyncEngine, expire_on_commit=False)
