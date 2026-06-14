@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import BaseModel, IPvAnyAddress, validator
+from pydantic import BaseModel, IPvAnyAddress, field_validator
 from uuid import UUID
 from shared.labels import LABEL2ID
 
@@ -14,7 +14,8 @@ class ConfidenceScores(BaseModel):
     phrase_repetition: float
     word_repetition: float
 
-    @validator("*")
+    @field_validator("*")
+    @classmethod
     def score_in_range(cls, v):
         if not (0.0 <= v <= 1.0):
             raise ValueError("confidence score must be between 0.0 and 1.0")
@@ -31,7 +32,8 @@ class PredictionCreate(BaseModel):
     client_ip: IPvAnyAddress
     request_id: Optional[UUID] = None
 
-    @validator("predicted_class")
+    @field_validator("predicted_class")
+    @classmethod
     def predicted_class_is_valid(cls, v):
         if v not in LABEL2ID:
             raise ValueError(

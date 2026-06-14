@@ -7,17 +7,24 @@ import uuid
 import wave
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Request,
+    UploadFile,
+)
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.middleware import (
     RequestSizeLimitExceeded,
     validate_audio_upload,
 )
 from backend.db import crud
-from backend.db.database import get_db
 from backend.db.schemas import ConfidenceScores, PredictionCreate
 from backend.services.feedback_service import FeedbackError, FeedbackStore
 from backend.services.model_service import (
@@ -182,45 +189,43 @@ def _multilabel_shim(
 
 
 async def _persist_prediction(
-    db: AsyncSession | None,
     *,
-    request: Request,
+    client_ip: str,
     audio_bytes: bytes,
     audio_filename: str | None,
     response: PredictionResponse,
 ) -> None:
-    if db is None:
-        # Database disabled (no POSTGRES_* configured) — skip logging silently.
+    """Best-effort prediction logging in its OWN DB session. Runs as a
+    background task (after the response is sent) so a slow/locked DB never
+    inflates /predict latency. No-op when the DB is disabled."""
+    from backend.db.database import DB_ENABLED, async_session_maker
+
+    if not DB_ENABLED or async_session_maker is None:
         return
-    model_version_id = await crud.get_model_version_id_by_label(
-        db, response.model_version
-    )
-    if model_version_id is None:
-        logger.debug(
-            "Skipping prediction DB row: no model_versions row for %r",
-            response.model_version,
-        )
-        return
-    client = request.client
-    host = client.host if client else "127.0.0.1"
     try:
-        payload = PredictionCreate(
-            audio_filename=(audio_filename or "upload.wav")[:500],
-            audio_duration_sec=_wav_duration_sec(audio_bytes),
-            predicted_class=response.predicted_class,
-            confidence_scores=_confidence_scores_for_db(response.confidence_scores),
-            model_version_id=model_version_id,
-            processing_time_ms=response.processing_time_ms,
-            client_ip=host,
-            request_id=uuid.UUID(response.request_id),
-        )
-        await crud.create_prediction(db, payload)
-    except HTTPException as exc:
-        logger.warning(
-            "Prediction DB insert rejected: %s — %s",
-            exc.status_code,
-            exc.detail,
-        )
+        async with async_session_maker() as db:
+            model_version_id = await crud.get_model_version_id_by_label(
+                db, response.model_version
+            )
+            if model_version_id is None:
+                logger.debug(
+                    "Skipping prediction DB row: no model_versions row for %r",
+                    response.model_version,
+                )
+                return
+            payload = PredictionCreate(
+                audio_filename=(audio_filename or "upload.wav")[:500],
+                audio_duration_sec=_wav_duration_sec(audio_bytes),
+                predicted_class=response.predicted_class,
+                confidence_scores=_confidence_scores_for_db(
+                    response.confidence_scores
+                ),
+                model_version_id=model_version_id,
+                processing_time_ms=response.processing_time_ms,
+                client_ip=client_ip,
+                request_id=uuid.UUID(response.request_id),
+            )
+            await crud.create_prediction(db, payload)
     except Exception:
         logger.exception("Prediction DB insert failed")
 
@@ -292,10 +297,10 @@ async def _resolve_predict_audio(
 )
 async def predict(
     request: Request,
+    background_tasks: BackgroundTasks,
     audio_file: UploadFile | None = File(None),
     s3_key: str | None = Form(None),
     model_service: ModelService = Depends(get_model_service),
-    db: AsyncSession | None = Depends(get_db),
 ) -> PredictionResponse:
     started_at = time.perf_counter()
     max_size_mb = getattr(request.app.state.settings, "MAX_AUDIO_SIZE_MB", 10)
@@ -350,9 +355,10 @@ async def predict(
         all_scores=all_scores,
         threshold=threshold,
     )
-    await _persist_prediction(
-        db,
-        request=request,
+    client = request.client
+    background_tasks.add_task(
+        _persist_prediction,
+        client_ip=client.host if client else "127.0.0.1",
         audio_bytes=audio_bytes,
         audio_filename=(audio_file.filename if audio_file is not None else s3_key),
         response=response,

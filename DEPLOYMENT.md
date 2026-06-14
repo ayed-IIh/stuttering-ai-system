@@ -166,21 +166,54 @@ side to wherever this service is reachable.
 - Boots without Postgres; DB optional. Non-root container; offline model load.
 - 28 backend/retrain tests pass.
 
-**Not done yet (future)**
+**Owned by the mobile team (not an AI-side gap)**
 - **Mobile-side S3 upload for `/predict`:** the AI accepts `s3_key`, but the
   mobile-API (Laravel) must implement uploading the clip to S3 + sending the
-  key. Until then the multipart path keeps working.
-- **`_persist_prediction` runs inline in `/predict`** — make it a background
-  task so a slow DB never inflates predict latency.
-- **Feedback store (local mode) is single-host** (in-process lock + `fsync`);
-  the **S3 backend** removes this limit for horizontal scaling. No retention
-  policy yet — monitor the corpus size.
-- Migrate the remaining Pydantic v1 `@validator`/`.dict()` in
-  `backend/db/schemas.py` + `crud.py` to v2; add the strict
-  `chk_confidence_scores_keys` constraint to the ORM (matches the SQL migration).
+  key. Until then the multipart path keeps working unchanged.
 
-**Hardening already applied:** non-root container user (`appuser`), offline
-model load (baked HF cache), DB-optional boot, WAV+label validation on
-`/feedback`, blocking feedback/S3 I/O offloaded to the threadpool, taxonomy
-sourced from `shared.labels` (no duplication), CI no longer masks test
-failures, and a parameterized `MODEL_VERSION` build arg.
+**Operational (needs the real environment, not code)**
+- Run the retraining cron on a host with the dataset + GPU.
+- Set up the S3 bucket + IAM credentials; apply the SQL migrations if using
+  Postgres.
+- The feedback corpus grows unbounded — add a retention/rotation policy when
+  volume warrants (monitor the bucket / `feedback_data` volume).
+
+**Hardening applied (this branch):** non-root container (`appuser`); offline
+model load (baked HF cache); DB-optional boot; WAV+label validation on
+`/feedback`; blocking feedback/S3 I/O offloaded to the threadpool;
+`_persist_prediction` is now a fire-and-forget background task with its own DB
+session (a slow DB can't inflate `/predict` latency); taxonomy sourced from
+`shared.labels` everywhere (no duplication); Pydantic v2 throughout
+(`@field_validator` / `model_dump`); ORM now requires all 7 confidence keys;
+cached resamplers; model label-set validated against the taxonomy on load; CI
+no longer masks test failures; parameterized `MODEL_VERSION` build arg.
+
+---
+
+## 7. Production deployment checklist
+
+Run on the deploy host (set real secrets there — **never commit them**):
+
+1. **Get the code + model.** Clone the repo (branch with this work) and place the
+   model at `exports/<MODEL_VERSION>/{model_inference.pt, config.json}` (it's
+   git-ignored — copy it onto the host).
+2. **`.env`** — `cp .env.example .env`, then set:
+   - `PRODUCTION_MODE=true`
+   - `ALLOWED_ORIGINS=<your frontend origin(s)>` (no `*`)
+   - `POSTGRES_*` (if you want prediction logging) — else leave unset.
+   - For S3: `STORAGE_BACKEND=s3`, `S3_BUCKET`, `S3_REGION`, and AWS creds via
+     the host's IAM role / `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`.
+3. **Build + run:** `docker compose up --build -d`. Verify:
+   `curl http://localhost:8000/health` → `{"model_loaded": true}`.
+4. **Connect the mobile-API:** point its `AI_PREDICT_URL` / `AI_FEEDBACK_URL` at
+   this service (the compose exposes the `ai-service` alias on the shared
+   network; otherwise use the host:port).
+5. **Retraining cron:** install `ops/cron/stuttering-ai-retrain.cron` on a host
+   that has the training deps + dataset (GPU recommended). Adjust paths/flags.
+6. **DB schema (if using Postgres):** apply `backend/db/migrations/*.sql`
+   (gives the strict `chk_confidence_scores_keys` constraint). Do **not** rely
+   on `create_all` for the constrained schema.
+
+**Mobile-side prerequisite for S3 `/predict`:** the Laravel API must upload the
+clip to `s3://<S3_BUCKET>/<S3_PREDICT_PREFIX>...` and send the `s3_key` form
+field. Until then, the multipart `audio_file` path keeps working unchanged.

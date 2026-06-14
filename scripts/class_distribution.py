@@ -26,20 +26,18 @@ import matplotlib.patches as mpatches
 import numpy as np
 import pandas as pd
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from shared.labels import CLASS_LABELS  # noqa: E402
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 SCRIPT_VERSION = "1.0.0"
 
-# Canonical class order matches model output indices 
-STUTTERING_CLASSES: list[str] = [
-    "fluent",
-    "blocks",
-    "interjections",
-    "prolongations",
-    "part_word_repetition",
-    "phrase_repetition",
-    "word_repetition",
-]
+# Canonical class order (matches model output indices), from shared.labels.
+STUTTERING_CLASSES: list[str] = list(CLASS_LABELS)
 
 # Repetition subclasses split from a previously merged class — expected to be smallest
 REPETITION_SUBCLASSES: frozenset[str] = frozenset({
