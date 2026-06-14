@@ -23,6 +23,10 @@ class StutterClass(str, enum.Enum):
     word_repetition = "word_repetition"
 
 
+# SQL array literal of the canonical keys, built from the enum (not a 2nd copy).
+_CLASS_KEYS_SQL = "ARRAY[" + ", ".join(f"'{c.value}'" for c in StutterClass) + "]"
+
+
 class ModelVersion(Base):
     __tablename__ = "model_versions"
 
@@ -64,9 +68,12 @@ class Prediction(Base):
 
     # Table-level constraints & indexes
     __table_args__ = (
-        # Optional: simple JSONB type check (advanced key/value validation still in DB migration)
+        # Require a JSONB object that contains all 7 canonical keys. (The strict
+        # "exactly 7 keys" count lives in the SQL migration via a custom
+        # function — it can't be a CHECK here since CHECK forbids subqueries.)
         CheckConstraint(
-            "jsonb_typeof(confidence_scores) = 'object'",
+            "jsonb_typeof(confidence_scores) = 'object' "
+            f"AND confidence_scores ?& {_CLASS_KEYS_SQL}",
             name="chk_confidence_score_type"
         ),
         # Indexes

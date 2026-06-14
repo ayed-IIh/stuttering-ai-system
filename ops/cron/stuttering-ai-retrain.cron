@@ -1,0 +1,23 @@
+# Stuttering AI — scheduled HITL retraining.
+#
+# Runs weekly (Sunday 03:00). The script pulls the accumulated therapist
+# corrections (from S3 or the local feedback dir), augments the training
+# manifest, retrains from the current production checkpoint, evaluates on the
+# held-out test set, and promotes the new model ONLY if its macro-F1 improves.
+# It self-skips when fewer than --min-new corrections have accumulated since the
+# last run, so running weekly is cheap when there's little new data.
+#
+# Install:  cp this file to /etc/cron.d/stuttering-ai-retrain  (mode 0644)
+# Adjust the paths/flags for your deployment. Requires the training deps + the
+# original dataset to be present on the host (a GPU host is recommended).
+#
+# m h dom mon dow user    command
+0 3 * * 0 appuser cd /app && /usr/local/bin/python scripts/retrain.py \
+  --config ai/training/configs/arabic_finetune.yaml \
+  --base-manifest ai/dataset/processed/train_manifest.csv \
+  --test-manifest ai/dataset/processed/test_manifest.csv \
+  --init-checkpoint exports/v3.0/model_inference.pt \
+  --work-dir runs/retrain \
+  --state-file runs/retrain/state.json \
+  --min-new 200 \
+  >> /var/log/stuttering-ai-retrain.log 2>&1

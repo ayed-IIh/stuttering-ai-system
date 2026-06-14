@@ -25,7 +25,11 @@ CORS is not on the integration path.
 ## 2. API contract (what the mobile requires)
 
 ### `POST /api/v1/predict`
-- **Request:** `multipart/form-data`, file field name **`audio_file`** (WAV, 16 kHz mono).
+- **Request:** one audio source, either —
+  - `multipart/form-data` with file field **`audio_file`** (WAV, 16 kHz mono), or
+  - form field **`s3_key`** (when `STORAGE_BACKEND=s3`): the mobile uploads the
+    clip to `s3://<S3_BUCKET>/<key>` and sends the key; the AI downloads it.
+  - Exactly one is required (else `422 MISSING_AUDIO`).
 - **Response (200):**
 ```json
 {
@@ -102,9 +106,37 @@ Health check: `curl http://localhost:8000/health`.
 | `ALLOWED_ORIGINS` | localhost | CORS (only needed if a browser calls the AI directly) |
 | `POSTGRES_*` | unset | **Optional.** If unset, DB is disabled and predictions just aren't logged (service still serves predict + feedback) |
 | `DB_ECHO` | `false` | Verbose SQL logging |
+| `STORAGE_BACKEND` | `local` | `local` (FEEDBACK_DIR) or `s3` (audio + corpus in S3) |
+| `S3_BUCKET` | — | Required when `STORAGE_BACKEND=s3` |
+| `S3_REGION` / `S3_ENDPOINT_URL` | — | AWS region / endpoint override (S3-compatible or mock) |
+| `S3_PREDICT_PREFIX` / `S3_FEEDBACK_PREFIX` | `predict-audio/` / `feedback/` | Key prefixes |
+| `MAX_FEEDBACK_AUDIO_MB` | `5` | `/feedback` decoded-WAV cap |
 
 **Postgres is optional.** A missing `POSTGRES_*` no longer blocks boot — the DB
 is used only to log prediction rows.
+
+**S3 (`STORAGE_BACKEND=s3`).** AWS credentials come from the standard chain
+(env vars / IAM role / `~/.aws`). With S3 on: `/predict` accepts an `s3_key`
+(the AI downloads the clip), and `/feedback` stores each correction as
+`<S3_FEEDBACK_PREFIX><id>.wav` + `<id>.json` — a horizontally-scalable corpus
+(no shared local file). Local mode stays the zero-dependency default.
+
+---
+
+## 4b. Automated retraining (HITL)
+
+`scripts/retrain.py` (scheduled via `ops/cron/stuttering-ai-retrain.cron`,
+weekly) closes the loop: it pulls the accumulated corrections (S3 or local),
+augments the training manifest, retrains from the current production checkpoint,
+evaluates on the held-out test set, and **promotes the new model only if its
+macro-F1 improves**. It self-skips when fewer than `--min-new` corrections have
+arrived since the last run, so weekly runs are cheap.
+
+> Retraining is **batch, not real-time** (real-time per-correction training
+> causes catastrophic forgetting). Requires the training deps + the original
+> dataset on the host (GPU recommended). The corpus reader + manifest builder
+> are unit-tested; the train/evaluate steps shell out to the existing
+> `ai/training/train_with_init.py` and `ai/evaluation/evaluate.py`.
 
 ---
 
@@ -125,24 +157,63 @@ side to wherever this service is reachable.
 ## 6. Status / what's left
 
 **Done & verified**
-- `/predict` emits the multi-label-shaped contract the mobile requires.
-- `/feedback` endpoint + file-based HITL store (audio + JSONL manifest).
-- Boots without Postgres; DB optional.
-- Dockerfile fixed (ships `shared/`, bakes model + HF cache, no `--reload`,
-  absolute `MODEL_PATH`), `python-dotenv` added, SQL echo off by default.
-- 10/10 backend tests pass (including the new contract + feedback tests).
+- `/predict` emits the multi-label-shaped contract the mobile requires, and
+  accepts either a multipart upload or an `s3_key`.
+- `/feedback` endpoint + HITL store (local JSONL **or** S3 per-object corpus).
+- S3 storage layer (audio + corpus), unit-tested with `moto`.
+- Automated retraining script + weekly cron (corpus → retrain → eval → promote
+  if better); data layer unit-tested.
+- Boots without Postgres; DB optional. Non-root container; offline model load.
+- 28 backend/retrain tests pass.
 
-**Not done yet (future)**
-- **Retraining loop:** a script that reads `FEEDBACK_DIR/feedback.jsonl` + audio,
-  extends the training manifest, retrains, evaluates, and promotes a new model
-  version. (The data is now being collected; the periodic retrain is manual.)
-- **Feedback store is single-host:** writes are guarded by an in-process lock +
-  `O_APPEND`/`fsync`. Horizontal scaling (multiple replicas/workers) needs the
-  file store replaced with object storage + a queue first. The store also has
-  no retention/rotation yet — monitor the `feedback_data` volume.
-- Migrate the Pydantic v1 `@validator` in `backend/db/schemas.py` to v2.
+**Owned by the mobile team (not an AI-side gap)**
+- **Mobile-side S3 upload for `/predict`:** the AI accepts `s3_key`, but the
+  mobile-API (Laravel) must implement uploading the clip to S3 + sending the
+  key. Until then the multipart path keeps working unchanged.
 
-**Hardening already applied:** non-root container user (`appuser`), offline
-model load (baked HF cache), DB-optional boot, WAV+label validation on
-`/feedback`, blocking feedback I/O offloaded to the threadpool, and a
-parameterized `MODEL_VERSION` build arg.
+**Operational (needs the real environment, not code)**
+- Run the retraining cron on a host with the dataset + GPU.
+- Set up the S3 bucket + IAM credentials; apply the SQL migrations if using
+  Postgres.
+- The feedback corpus grows unbounded — add a retention/rotation policy when
+  volume warrants (monitor the bucket / `feedback_data` volume).
+
+**Hardening applied (this branch):** non-root container (`appuser`); offline
+model load (baked HF cache); DB-optional boot; WAV+label validation on
+`/feedback`; blocking feedback/S3 I/O offloaded to the threadpool;
+`_persist_prediction` is now a fire-and-forget background task with its own DB
+session (a slow DB can't inflate `/predict` latency); taxonomy sourced from
+`shared.labels` everywhere (no duplication); Pydantic v2 throughout
+(`@field_validator` / `model_dump`); ORM now requires all 7 confidence keys;
+cached resamplers; model label-set validated against the taxonomy on load; CI
+no longer masks test failures; parameterized `MODEL_VERSION` build arg.
+
+---
+
+## 7. Production deployment checklist
+
+Run on the deploy host (set real secrets there — **never commit them**):
+
+1. **Get the code + model.** Clone the repo (branch with this work) and place the
+   model at `exports/<MODEL_VERSION>/{model_inference.pt, config.json}` (it's
+   git-ignored — copy it onto the host).
+2. **`.env`** — `cp .env.example .env`, then set:
+   - `PRODUCTION_MODE=true`
+   - `ALLOWED_ORIGINS=<your frontend origin(s)>` (no `*`)
+   - `POSTGRES_*` (if you want prediction logging) — else leave unset.
+   - For S3: `STORAGE_BACKEND=s3`, `S3_BUCKET`, `S3_REGION`, and AWS creds via
+     the host's IAM role / `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY`.
+3. **Build + run:** `docker compose up --build -d`. Verify:
+   `curl http://localhost:8000/health` → `{"model_loaded": true}`.
+4. **Connect the mobile-API:** point its `AI_PREDICT_URL` / `AI_FEEDBACK_URL` at
+   this service (the compose exposes the `ai-service` alias on the shared
+   network; otherwise use the host:port).
+5. **Retraining cron:** install `ops/cron/stuttering-ai-retrain.cron` on a host
+   that has the training deps + dataset (GPU recommended). Adjust paths/flags.
+6. **DB schema (if using Postgres):** apply `backend/db/migrations/*.sql`
+   (gives the strict `chk_confidence_scores_keys` constraint). Do **not** rely
+   on `create_all` for the constrained schema.
+
+**Mobile-side prerequisite for S3 `/predict`:** the Laravel API must upload the
+clip to `s3://<S3_BUCKET>/<S3_PREDICT_PREFIX>...` and send the `s3_key` form
+field. Until then, the multipart `audio_file` path keeps working unchanged.

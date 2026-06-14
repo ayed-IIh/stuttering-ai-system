@@ -32,7 +32,7 @@ async def get_model_version_id_by_label(
 
 
 async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Prediction:
-    values = data.dict()
+    values = data.model_dump()
 
     if not values.get("request_id"):
         values["request_id"] = uuid.uuid4()

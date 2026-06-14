@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any
 
 import torchaudio
-import torchaudio.functional as TAF
 
 from ai.preprocessing.audio_loader import (
     TARGET_DURATION_SEC,
@@ -131,6 +130,9 @@ class ModelService:
         self._model_version = config.SERVICE_VERSION
         self._model_config: dict[str, Any] = {}
         self._class_names: list[str] = list(CLASS_LABELS)
+        # Cache Resample transforms per (native_sr, target_sr) — rebuilding one
+        # on every non-16kHz upload is wasted CPU.
+        self._resamplers: dict[tuple[int, int], Any] = {}
         self._target_sample_rate = 16_000
         self._max_duration_sec = float(TARGET_DURATION_SEC)
         self._load_sync()
@@ -168,6 +170,16 @@ class ModelService:
 
         self._model_config = self._read_json_config(config_path)
         self._class_names = self._extract_class_names(self._model_config)
+        # The DB enum and the mobile contract assume the canonical taxonomy. If a
+        # loaded config.json diverges, predicted_class could fall outside the
+        # enum and confidence_scores would be zero-filled — warn loudly.
+        if list(self._class_names) != list(CLASS_LABELS):
+            logger.warning(
+                "Loaded model labels %s differ from the canonical taxonomy %s — "
+                "predictions may not map to the DB enum / mobile contract.",
+                self._class_names,
+                list(CLASS_LABELS),
+            )
         data_cfg = _data_block(self._model_config)
         self._target_sample_rate = int(
             data_cfg.get("target_sr")
@@ -407,11 +419,19 @@ class ModelService:
 
         target_sr = self._target_sample_rate
         if int(native_sr) != target_sr:
-            resampler = torchaudio.transforms.Resample(int(native_sr), target_sr)
+            resampler = self._get_resampler(int(native_sr), target_sr)
             waveform = resampler(waveform.unsqueeze(0)).squeeze(0)
 
         waveform = waveform.unsqueeze(0)
         return waveform.to(torch.float32)
+
+    def _get_resampler(self, native_sr: int, target_sr: int) -> Any:
+        key = (native_sr, target_sr)
+        rs = self._resamplers.get(key)
+        if rs is None:
+            rs = torchaudio.transforms.Resample(native_sr, target_sr)
+            self._resamplers[key] = rs
+        return rs
 
     def _decode_wav_bytes_wave_only(self, audio_bytes: bytes) -> Any:
         """Fallback when torch is unavailable (tests / minimal env)."""

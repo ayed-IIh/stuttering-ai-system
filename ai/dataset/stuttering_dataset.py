@@ -10,6 +10,7 @@ from ai.preprocessing.audio_loader import (
     normalize_waveform,
     pad_or_truncate,
 )
+from shared.labels import ID2LABEL as _ID2LABEL, LABEL2ID as _LABEL2ID
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +18,9 @@ _VALID_MODES = {"train", "val", "test"}
 
 
 class StutteringDataset(Dataset):
-    LABEL2ID: Dict[str, int] = {
-        "fluent": 0,
-        "blocks": 1,
-        "interjections": 2,
-        "prolongations": 3,
-        "part_word_repetition": 4,
-        "phrase_repetition": 5,
-        "word_repetition": 6,
-    }
-    ID2LABEL: Dict[int, str] = {v: k for k, v in LABEL2ID.items()}
+    # Sourced from the canonical taxonomy (shared.labels), not a local copy.
+    LABEL2ID: Dict[str, int] = dict(_LABEL2ID)
+    ID2LABEL: Dict[int, str] = dict(_ID2LABEL)
 
     def __init__(
         self,

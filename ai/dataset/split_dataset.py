@@ -23,27 +23,25 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import sys
 from pathlib import Path
 
 import pandas as pd
 from sklearn.model_selection import GroupShuffleSplit, StratifiedShuffleSplit
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from shared.labels import LABEL2ID as LABEL_TO_ID  # noqa: E402
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 SCRIPT_VERSION = "1.0.0"
 RANDOM_SEED = 42
 
-# Keep in sync with STUTTERING_CLASSES in ai/models/stuttering_classifier.py
-LABEL_TO_ID: dict[str, int] = {
-    "fluent": 0,
-    "blocks": 1,
-    "interjections": 2,
-    "prolongations": 3,
-    "part_word_repetition": 4,
-    "phrase_repetition": 5,
-    "word_repetition": 6,
-}
-assert len(LABEL_TO_ID) == 7, "LABEL_TO_ID must have exactly 7 entries"
+# Class -> id mapping sourced from the canonical taxonomy (shared.labels).
+assert len(LABEL_TO_ID) == 7, "shared.labels.LABEL2ID must have exactly 7 entries"
 
 # floor(0.15 * n) >= 1 requires n >= 7; below this the second-pass split breaks
 MIN_SAMPLES_FOR_SPLIT = 7

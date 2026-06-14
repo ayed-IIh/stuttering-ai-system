@@ -27,9 +27,12 @@ import uuid
 import wave
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from shared.labels import CLASS_LABELS
+
+if TYPE_CHECKING:
+    from backend.services.s3_storage import S3Storage
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +84,11 @@ class FeedbackStore:
     """
 
     def __init__(
-        self, base_dir: str, max_audio_bytes: int = DEFAULT_MAX_AUDIO_BYTES
+        self,
+        base_dir: str,
+        max_audio_bytes: int = DEFAULT_MAX_AUDIO_BYTES,
+        s3: Optional["S3Storage"] = None,
+        s3_prefix: str = "feedback/",
     ) -> None:
         self.base_dir = Path(base_dir)
         self.audio_dir = self.base_dir / "audio"
@@ -91,13 +98,21 @@ class FeedbackStore:
         # reject oversized payloads BEFORE the costly decode. Small margin for
         # any incidental whitespace/newlines.
         self._max_b64_len = 4 * ((self.max_audio_bytes + 2) // 3) + 16
-        # Serialize concurrent writers appending to the same manifest file.
+        # When set, corrections are stored as per-object pairs in S3 (audio +
+        # metadata json) instead of the local audio dir + JSONL manifest. S3 is
+        # horizontally scalable (no shared mutable file); local is single-host.
+        self._s3 = s3
+        self._s3_prefix = s3_prefix
+        # Serialize concurrent writers (local manifest append / counter).
         self._lock = threading.Lock()
         # In-memory counter, seeded once, so /feedback doesn't re-scan the whole
-        # manifest on every POST (the file grows unbounded over time).
-        self._count = self._count_lines()
+        # corpus on every POST (it grows unbounded over time).
+        self._count = self._seed_count()
 
-    def _count_lines(self) -> int:
+    def _seed_count(self) -> int:
+        if self._s3 is not None:
+            # Each correction = one .json object under the prefix.
+            return sum(1 for k in self._s3.list_keys(self._s3_prefix) if k.endswith(".json"))
         if not self.manifest_path.exists():
             return 0
         with self.manifest_path.open("r", encoding="utf-8") as fh:
@@ -171,32 +186,23 @@ class FeedbackStore:
         record = {
             "id": feedback_id,
             "created_at": created_at,
-            "audio_file": f"audio/{audio_name}",
+            "audio_file": (
+                f"{self._s3_prefix}{audio_name}"
+                if self._s3 is not None
+                else f"audio/{audio_name}"
+            ),
             "correct_labels": norm_correct,
             "original_prediction": norm_original,
             "model_version": str(model_version),
             "audio_bytes": len(audio_bytes),
         }
 
-        self._ensure_dirs()
-        audio_path = self.audio_dir / audio_name
-        # Write the audio, then the manifest line (the manifest is the source of
-        # truth: a manifest entry without committed audio must never exist). On
-        # any I/O failure, remove the half-written audio so it can't be picked
-        # up by the retraining reader. fsync the manifest so the line survives a
-        # power loss. A hard kill between the two writes can orphan an audio
-        # file — that's tolerated, since the reader ignores unreferenced audio.
-        try:
-            with self._lock:
-                audio_path.write_bytes(audio_bytes)
-                with self.manifest_path.open("a", encoding="utf-8") as fh:
-                    fh.write(json.dumps(record, ensure_ascii=False) + "\n")
-                    fh.flush()
-                    os.fsync(fh.fileno())
-                self._count += 1
-        except OSError as exc:
-            audio_path.unlink(missing_ok=True)
-            raise FeedbackError(f"failed to persist feedback: {exc}") from exc
+        if self._s3 is not None:
+            self._persist_s3(feedback_id, audio_name, audio_bytes, record)
+        else:
+            self._persist_local(audio_name, audio_bytes, record)
+        with self._lock:
+            self._count += 1
 
         logger.info(
             "Stored HITL feedback %s (%d bytes, correct=%s, was=%s)",
@@ -206,6 +212,44 @@ class FeedbackStore:
             record["original_prediction"],
         )
         return record
+
+    def _persist_local(self, audio_name: str, audio_bytes: bytes, record: dict) -> None:
+        """Write audio then the manifest line. The manifest is the source of
+        truth (no manifest entry without committed audio); fsync it so the line
+        survives a power loss. A hard kill between the two writes can orphan an
+        audio file — tolerated, since the reader ignores unreferenced audio."""
+        self._ensure_dirs()
+        audio_path = self.audio_dir / audio_name
+        try:
+            with self._lock:
+                audio_path.write_bytes(audio_bytes)
+                with self.manifest_path.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+        except OSError as exc:
+            audio_path.unlink(missing_ok=True)
+            raise FeedbackError(f"failed to persist feedback: {exc}") from exc
+
+    def _persist_s3(
+        self, feedback_id: str, audio_name: str, audio_bytes: bytes, record: dict
+    ) -> None:
+        """Store the correction as two S3 objects: the WAV then the metadata
+        json. Audio is written first so the .json (which the retraining reader
+        keys on) never references missing audio."""
+        from backend.services.s3_storage import S3Error
+
+        try:
+            self._s3.upload_bytes(
+                f"{self._s3_prefix}{audio_name}", audio_bytes, content_type="audio/wav"
+            )
+            self._s3.upload_bytes(
+                f"{self._s3_prefix}{feedback_id}.json",
+                json.dumps(record, ensure_ascii=False).encode("utf-8"),
+                content_type="application/json",
+            )
+        except S3Error as exc:
+            raise FeedbackError(f"failed to persist feedback to S3: {exc}") from exc
 
     def count(self) -> int:
         """Number of corrections stored so far (O(1), in-memory counter)."""
