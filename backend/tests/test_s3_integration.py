@@ -79,6 +79,16 @@ def test_predict_no_audio_source_returns_422(s3_app) -> None:
     assert response.json()["error_code"] == "MISSING_AUDIO"
 
 
+def test_predict_s3_key_outside_prefix_rejected(s3_app) -> None:
+    """A client must not read arbitrary bucket objects (e.g. the feedback
+    corpus) via s3_key — only keys under the predict prefix are allowed."""
+    client, s3 = s3_app
+    s3.upload_bytes("feedback/secret.wav", b"RIFFxxxxWAVE", "audio/wav")
+    response = client.post("/api/v1/predict", data={"s3_key": "feedback/secret.wav"})
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_S3_KEY"
+
+
 def test_feedback_stored_to_s3(s3_app, fixture_wav_path: Path) -> None:
     client, s3 = s3_app
     audio_b64 = base64.b64encode(fixture_wav_path.read_bytes()).decode("ascii")

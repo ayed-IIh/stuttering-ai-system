@@ -10,13 +10,16 @@
 # Install:  cp this file to /etc/cron.d/stuttering-ai-retrain  (mode 0644)
 # Adjust the paths/flags for your deployment. Requires the training deps + the
 # original dataset to be present on the host (a GPU host is recommended).
+# --init-checkpoint must be a TRAINING checkpoint (one with `model_state_dict`),
+# i.e. the run that produced the current production model — NOT the trimmed
+# `model_inference.pt` export. Put it where the path below points.
 #
 # m h dom mon dow user    command
 0 3 * * 0 appuser cd /app && /usr/local/bin/python scripts/retrain.py \
-  --config ai/training/configs/arabic_finetune.yaml \
+  --config ai/training/configs/finetune_full.yaml \
   --base-manifest ai/dataset/processed/train_manifest.csv \
   --test-manifest ai/dataset/processed/test_manifest.csv \
-  --init-checkpoint exports/v3.0/model_inference.pt \
+  --init-checkpoint ai/training/checkpoints/production/best_model.pt \
   --work-dir runs/retrain \
   --state-file runs/retrain/state.json \
   --min-new 200 \

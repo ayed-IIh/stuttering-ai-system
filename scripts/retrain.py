@@ -24,6 +24,7 @@ import argparse
 import csv
 import json
 import logging
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -60,7 +61,7 @@ def load_corpus_s3(s3, prefix: str) -> list[Correction]:
         if not key.endswith(".json"):
             continue
         meta = s3.get_json(key)
-        corr = _correction_from_meta(meta, lambda k: s3.download_bytes(k), prefix)
+        corr = _correction_from_meta(meta, lambda k: s3.download_bytes(k))
         if corr is not None:
             out.append(corr)
     return out
@@ -79,15 +80,13 @@ def load_corpus_local(feedback_dir: str) -> list[Correction]:
             if not line:
                 continue
             meta = json.loads(line)
-            corr = _correction_from_meta(
-                meta, lambda rel: (base / rel).read_bytes(), prefix=""
-            )
+            corr = _correction_from_meta(meta, lambda rel: (base / rel).read_bytes())
             if corr is not None:
                 out.append(corr)
     return out
 
 
-def _correction_from_meta(meta: dict, read_audio, prefix: str) -> Optional[Correction]:
+def _correction_from_meta(meta: dict, read_audio) -> Optional[Correction]:
     """Build a Correction from a metadata record, fetching its audio. Skips
     (with a warning) records whose label is missing/unknown or whose audio
     can't be read — one bad record must not abort the whole run."""
@@ -166,9 +165,9 @@ def write_state(state_path: Path, state: dict) -> None:
 # --------------------------------------------------------------------------- #
 # Orchestration (shells out to the existing train/eval scripts).
 # --------------------------------------------------------------------------- #
-def _run(cmd: list[str]) -> None:
+def _run(cmd: list[str], env: Optional[dict] = None) -> None:
     logger.info("run: %s", " ".join(cmd))
-    subprocess.run(cmd, check=True, cwd=str(_REPO_ROOT))
+    subprocess.run(cmd, check=True, cwd=str(_REPO_ROOT), env=env)
 
 
 def read_metric(metrics_json: Path, key: str = "f1_macro") -> Optional[float]:
@@ -177,6 +176,30 @@ def read_metric(metrics_json: Path, key: str = "f1_macro") -> Optional[float]:
     data = json.loads(metrics_json.read_text(encoding="utf-8"))
     val = data.get(key)
     return float(val) if val is not None else None
+
+
+def derive_training_config(
+    base_config: Path, augmented_manifest: Path, work: Path
+) -> tuple[Path, Path]:
+    """Write a derived YAML config that points training at the augmented manifest
+    and a per-run checkpoint dir. Returns (derived_config_path, candidate_ckpt).
+
+    Without this, train.py would read the STATIC train manifest + checkpoint dir
+    from the base config — the corrections would never reach training.
+    """
+    import yaml
+
+    cfg = yaml.safe_load(base_config.read_text(encoding="utf-8"))
+    cfg.setdefault("data", {})["train_manifest"] = str(augmented_manifest)
+    out = cfg.setdefault("output", {})
+    out["checkpoint_dir"] = str(work / "checkpoints")
+    out["experiment_name"] = "retrain"
+    derived = work / "derived_config.yaml"
+    derived.parent.mkdir(parents=True, exist_ok=True)
+    derived.write_text(yaml.safe_dump(cfg, sort_keys=False), encoding="utf-8")
+    # train.py writes best_model.pt under <checkpoint_dir>/<experiment_name>/.
+    candidate = work / "checkpoints" / "retrain" / "best_model.pt"
+    return derived, candidate
 
 
 def load_corpus_from_settings(settings) -> list[Correction]:
@@ -213,7 +236,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     from backend.app.config import get_settings
 
     corpus = load_corpus_from_settings(get_settings())
-    new_count = len(corpus) - int(state.get("last_trained_count", 0))
+    # max(0, ...) so a corpus that shrank (S3 object expiry) can't go negative
+    # and permanently stall retraining. The HITL corpus is append-only by design.
+    new_count = max(0, len(corpus) - int(state.get("last_trained_count", 0)))
     logger.info("corpus=%d, new since last train=%d (min-new=%d)", len(corpus), new_count, args.min_new)
     if new_count < args.min_new:
         logger.info("Not enough new corrections — skipping retrain.")
@@ -228,13 +253,16 @@ def main(argv: Optional[list[str]] = None) -> int:
         logger.info("dry-run: stopping before train/evaluate/promote.")
         return 0
 
-    # Retrain from the current production checkpoint on the augmented manifest.
-    ckpt_dir = work / "checkpoints"
-    _run([
-        sys.executable, "ai/training/train_with_init.py",
-        "--config", args.config,
-    ])  # train_with_init reads INIT_CHECKPOINT_PATH + the manifest via the config/env
-    new_ckpt = ckpt_dir / "best_model.pt"
+    # Retrain from the current production checkpoint on the AUGMENTED manifest.
+    # A derived config wires train.py to the augmented manifest + a per-run
+    # checkpoint dir; INIT_CHECKPOINT_PATH makes train_with_init.py fine-tune
+    # from the incumbent instead of training from scratch.
+    derived_config, new_ckpt = derive_training_config(Path(args.config), manifest, work)
+    train_env = {**os.environ, "INIT_CHECKPOINT_PATH": str(args.init_checkpoint)}
+    _run(
+        [sys.executable, "ai/training/train_with_init.py", "--config", str(derived_config)],
+        env=train_env,
+    )
 
     # Evaluate the candidate and compare against the incumbent.
     eval_dir = work / "eval"
