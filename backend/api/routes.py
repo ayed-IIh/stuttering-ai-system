@@ -254,6 +254,14 @@ async def _resolve_predict_audio(
                 400, "S3_NOT_CONFIGURED", "S3 is not configured",
                 "Set STORAGE_BACKEND=s3 to use s3_key.",
             )
+        # Confine downloads to the predict prefix so a client can't read
+        # arbitrary bucket objects (e.g. the feedback corpus) via s3_key.
+        prefix = getattr(request.app.state, "s3_predict_prefix", "") or ""
+        if prefix and not s3_key.startswith(prefix):
+            raise _http_error(
+                400, "INVALID_S3_KEY", "s3_key outside the allowed prefix",
+                f"s3_key must start with {prefix!r}",
+            )
         from backend.services.s3_storage import S3Error
 
         try:
@@ -269,7 +277,7 @@ async def _resolve_predict_audio(
                 413, "FILE_TOO_LARGE", "Audio exceeds size limit",
                 f"{len(data)} bytes > {max_bytes} bytes",
             )
-        if data[:4] != b"RIFF":
+        if data[:4] != b"RIFF" or data[8:12] != b"WAVE":
             raise _http_error(
                 415, "UNSUPPORTED_MEDIA_TYPE", "Audio must be WAV",
                 "object is missing the RIFF/WAVE header",
