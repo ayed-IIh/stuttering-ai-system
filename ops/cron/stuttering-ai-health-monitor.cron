@@ -1,0 +1,8 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Configure one of these alert targets on the Oracle server before installing:
+# MONITOR_ALERT_EMAIL_TO=team@example.com
+# MONITOR_ALERT_WEBHOOK_URL=https://hooks.example.invalid/services/...
+
+*/5 * * * * cd /opt/stuttering-ai-system && /usr/bin/python3 scripts/monitor_services.py >> /var/log/stuttering-ai/monitor-cron.log 2>&1
