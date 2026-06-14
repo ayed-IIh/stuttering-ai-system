@@ -21,6 +21,7 @@ import binascii
 import io
 import json
 import logging
+import os
 import threading
 import uuid
 import wave
@@ -32,9 +33,9 @@ from shared.labels import CLASS_LABELS
 
 logger = logging.getLogger(__name__)
 
-# Mirror the mobile-side cap (MAX_FEEDBACK_AUDIO_BYTES = 5 MB) so we reject
-# oversized payloads rather than writing them to disk.
-MAX_AUDIO_BYTES = 5 * 1024 * 1024
+# Default cap, mirroring the mobile side (MAX_FEEDBACK_AUDIO_BYTES = 5 MB). The
+# effective cap is configurable per-store (see FeedbackStore.__init__).
+DEFAULT_MAX_AUDIO_BYTES = 5 * 1024 * 1024
 
 # Valid stuttering classes — corrections outside this set would poison the
 # retraining corpus, so they are rejected at the door.
@@ -71,14 +72,36 @@ def _normalize_labels(value: Any) -> list[str]:
 
 
 class FeedbackStore:
-    """Append-only store for HITL corrections (audio + a JSONL manifest)."""
+    """Append-only store for HITL corrections (audio + a JSONL manifest).
 
-    def __init__(self, base_dir: str) -> None:
+    The manifest (``feedback.jsonl``) is the source of truth; the retraining
+    reader should ignore any audio file not referenced by a manifest line.
+    Intended for a single writer host — ``save`` is blocking and must be called
+    off the event loop (the API offloads it to the threadpool).
+    """
+
+    def __init__(
+        self, base_dir: str, max_audio_bytes: int = DEFAULT_MAX_AUDIO_BYTES
+    ) -> None:
         self.base_dir = Path(base_dir)
         self.audio_dir = self.base_dir / "audio"
         self.manifest_path = self.base_dir / "feedback.jsonl"
+        self.max_audio_bytes = int(max_audio_bytes)
+        # base64 expands bytes by ~4/3 — derive the max encoded length so we can
+        # reject oversized payloads BEFORE the costly decode. Small margin for
+        # any incidental whitespace/newlines.
+        self._max_b64_len = 4 * ((self.max_audio_bytes + 2) // 3) + 16
         # Serialize concurrent writers appending to the same manifest file.
         self._lock = threading.Lock()
+        # In-memory counter, seeded once, so /feedback doesn't re-scan the whole
+        # manifest on every POST (the file grows unbounded over time).
+        self._count = self._count_lines()
+
+    def _count_lines(self) -> int:
+        if not self.manifest_path.exists():
+            return 0
+        with self.manifest_path.open("r", encoding="utf-8") as fh:
+            return sum(1 for line in fh if line.strip())
 
     def _ensure_dirs(self) -> None:
         self.audio_dir.mkdir(parents=True, exist_ok=True)
@@ -96,15 +119,21 @@ class FeedbackStore:
         Raises ``FeedbackError`` on invalid/oversized audio, non-WAV payloads,
         empty/unknown ``correct_labels``, or a failed disk write.
         """
+        # Reject oversized payloads BEFORE decoding, so a huge body can't force
+        # a multi-MB base64 decode in memory just to be thrown away.
+        if len(audio_base64) > self._max_b64_len:
+            raise FeedbackError(
+                f"audio exceeds {self.max_audio_bytes} bytes (encoded payload too large)"
+            )
         try:
             audio_bytes = base64.b64decode(audio_base64, validate=True)
         except (binascii.Error, ValueError) as exc:
             raise FeedbackError(f"audio_base64 is not valid base64: {exc}") from exc
         if not audio_bytes:
             raise FeedbackError("audio_base64 decoded to empty bytes")
-        if len(audio_bytes) > MAX_AUDIO_BYTES:
+        if len(audio_bytes) > self.max_audio_bytes:
             raise FeedbackError(
-                f"audio exceeds {MAX_AUDIO_BYTES} bytes (got {len(audio_bytes)})"
+                f"audio exceeds {self.max_audio_bytes} bytes (got {len(audio_bytes)})"
             )
         # The payload is stored as *.wav and later read for retraining, so make
         # sure it really is decodable WAV audio — not arbitrary bytes.
@@ -112,22 +141,28 @@ class FeedbackStore:
             with wave.open(io.BytesIO(audio_bytes), "rb") as wav_file:
                 if wav_file.getnchannels() <= 0 or wav_file.getframerate() <= 0:
                     raise FeedbackError("audio is not a valid WAV file")
-        except wave.Error as exc:
+        except (wave.Error, EOFError) as exc:
+            # wave raises wave.Error for a wrong header but EOFError for data
+            # too short to even hold a chunk header — both mean "not a WAV".
             raise FeedbackError(f"audio is not a valid WAV file: {exc}") from exc
 
-        # Labels feed the retraining corpus — reject empty/unknown ones up front.
+        # correct_labels feed the retraining corpus — reject empty/unknown ones.
         norm_correct = _normalize_labels(correct_labels)
         if not norm_correct:
             raise FeedbackError("correct_labels must contain at least one label")
         unknown = sorted(set(norm_correct) - VALID_LABELS)
         if unknown:
             raise FeedbackError(f"unknown correct_labels: {', '.join(unknown)}")
+        # original_prediction is only contextual metadata (what the AI said), so
+        # an out-of-taxonomy value there must NOT discard a valid correction —
+        # drop the unknowns and keep the rest.
         norm_original = _normalize_labels(original_prediction)
-        unknown_orig = sorted(set(norm_original) - VALID_LABELS)
-        if unknown_orig:
-            raise FeedbackError(
-                f"unknown original_prediction: {', '.join(unknown_orig)}"
+        dropped = [x for x in norm_original if x not in VALID_LABELS]
+        if dropped:
+            logger.warning(
+                "Dropping unknown original_prediction labels: %s", ", ".join(dropped)
             )
+            norm_original = [x for x in norm_original if x in VALID_LABELS]
 
         feedback_id = uuid.uuid4().hex
         created_at = datetime.now(timezone.utc).isoformat()
@@ -145,13 +180,20 @@ class FeedbackStore:
 
         self._ensure_dirs()
         audio_path = self.audio_dir / audio_name
-        # Audio + manifest must persist as a unit. On any I/O failure, remove a
-        # half-written audio file so it can't orphan or corrupt the corpus.
+        # Write the audio, then the manifest line (the manifest is the source of
+        # truth: a manifest entry without committed audio must never exist). On
+        # any I/O failure, remove the half-written audio so it can't be picked
+        # up by the retraining reader. fsync the manifest so the line survives a
+        # power loss. A hard kill between the two writes can orphan an audio
+        # file — that's tolerated, since the reader ignores unreferenced audio.
         try:
             with self._lock:
                 audio_path.write_bytes(audio_bytes)
                 with self.manifest_path.open("a", encoding="utf-8") as fh:
                     fh.write(json.dumps(record, ensure_ascii=False) + "\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                self._count += 1
         except OSError as exc:
             audio_path.unlink(missing_ok=True)
             raise FeedbackError(f"failed to persist feedback: {exc}") from exc
@@ -166,8 +208,5 @@ class FeedbackStore:
         return record
 
     def count(self) -> int:
-        """Number of corrections stored so far (0 if none yet)."""
-        if not self.manifest_path.exists():
-            return 0
-        with self.manifest_path.open("r", encoding="utf-8") as fh:
-            return sum(1 for line in fh if line.strip())
+        """Number of corrections stored so far (O(1), in-memory counter)."""
+        return self._count

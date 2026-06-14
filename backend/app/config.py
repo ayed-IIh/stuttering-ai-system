@@ -44,6 +44,10 @@ class Settings(BaseSettings):
             "manifest) are stored for later retraining."
         ),
     )
+    MAX_FEEDBACK_AUDIO_MB: int = Field(
+        default=5,
+        description="Max decoded WAV size accepted by POST /feedback (MB).",
+    )
 
     @field_validator("allowed_origins_raw", mode="before")
     @classmethod

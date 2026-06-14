@@ -3,6 +3,8 @@ from __future__ import annotations
 import base64
 from pathlib import Path
 
+import pytest
+
 from shared.labels import NUM_CLASSES
 
 
@@ -103,9 +105,20 @@ def test_feedback_rejects_invalid_base64(client) -> None:
     assert response.json()["error_code"] == "INVALID_FEEDBACK"
 
 
-def test_feedback_rejects_non_wav_audio(client) -> None:
-    """Valid base64 but non-WAV bytes must be rejected (corpus integrity)."""
-    audio_b64 = base64.b64encode(b"not a wav file body at all").decode("ascii")
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"not a wav file body at all",  # wrong header -> wave.Error
+        b"short",  # too short to hold a chunk header -> EOFError
+    ],
+)
+def test_feedback_rejects_non_wav_audio(client, raw: bytes) -> None:
+    """Valid base64 but non-WAV bytes must be rejected (corpus integrity).
+
+    Covers both wave failure modes: a wrong RIFF header (wave.Error) and a
+    payload too short to parse (EOFError) — the latter must not 500.
+    """
+    audio_b64 = base64.b64encode(raw).decode("ascii")
     response = client.post(
         "/api/v1/feedback",
         json={

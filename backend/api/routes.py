@@ -345,15 +345,16 @@ async def get_classes() -> ClassesResponse:
         503: {"model": ErrorResponse},
     },
 )
-async def feedback(
+def feedback(
     payload: FeedbackRequest,
     store: FeedbackStore = Depends(get_feedback_store),
 ) -> FeedbackResponse:
     """Store a therapist correction (HITL) for later retraining.
 
     The mobile client fires this fire-and-forget when a diagnosis is edited; it
-    expects a fast ``{"status": "accepted"}``. The audio + labels are persisted
-    synchronously (payload is <= 5 MB, so the write is sub-second).
+    expects a fast ``{"status": "accepted"}``. Declared ``def`` (not ``async``)
+    on purpose: the base64 decode + WAV parse + disk writes are blocking, so
+    FastAPI runs this in its threadpool instead of stalling the event loop.
     """
     try:
         record = store.save(

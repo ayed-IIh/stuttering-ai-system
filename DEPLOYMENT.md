@@ -136,5 +136,13 @@ side to wherever this service is reachable.
 - **Retraining loop:** a script that reads `FEEDBACK_DIR/feedback.jsonl` + audio,
   extends the training manifest, retrains, evaluates, and promotes a new model
   version. (The data is now being collected; the periodic retrain is manual.)
-- Run as a non-root container user (nice-to-have hardening).
+- **Feedback store is single-host:** writes are guarded by an in-process lock +
+  `O_APPEND`/`fsync`. Horizontal scaling (multiple replicas/workers) needs the
+  file store replaced with object storage + a queue first. The store also has
+  no retention/rotation yet — monitor the `feedback_data` volume.
 - Migrate the Pydantic v1 `@validator` in `backend/db/schemas.py` to v2.
+
+**Hardening already applied:** non-root container user (`appuser`), offline
+model load (baked HF cache), DB-optional boot, WAV+label validation on
+`/feedback`, blocking feedback I/O offloaded to the threadpool, and a
+parameterized `MODEL_VERSION` build arg.

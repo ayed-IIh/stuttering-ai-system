@@ -1,7 +1,7 @@
 import os
 import logging
 from typing import AsyncGenerator, Optional
-from urllib.parse import quote
+from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
@@ -37,19 +37,26 @@ if _missing_vars:
         "persisted (inference is unaffected).",
         ", ".join(_missing_vars),
     )
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL = None
     AsyncEngine = None
     async_session_maker = None
     DB_ENABLED = False
 else:
-    # URL-escape the user/password/db so credentials containing reserved
-    # characters (@ : / # etc.) don't corrupt the DSN.
-    _user = quote(os.getenv("POSTGRES_USER", ""), safe="")
-    _password = quote(os.getenv("POSTGRES_PASSWORD", ""), safe="")
-    _database = quote(os.getenv("POSTGRES_DB", ""), safe="")
-    DATABASE_URL = (
-        f"postgresql+asyncpg://{_user}:{_password}"
-        f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{_database}"
+    try:
+        _port = int(os.getenv("POSTGRES_PORT", ""))
+    except ValueError as exc:
+        raise EnvironmentError(
+            f"POSTGRES_PORT must be an integer, got {os.getenv('POSTGRES_PORT')!r}"
+        ) from exc
+    # URL.create escapes every component, so credentials/host with reserved
+    # characters (@ : / # etc.) can't corrupt the DSN.
+    DATABASE_URL = URL.create(
+        "postgresql+asyncpg",
+        username=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST"),
+        port=_port,
+        database=os.getenv("POSTGRES_DB"),
     )
     AsyncEngine = create_async_engine(DATABASE_URL, echo=_DB_ECHO)
     async_session_maker = async_sessionmaker(AsyncEngine, expire_on_commit=False)

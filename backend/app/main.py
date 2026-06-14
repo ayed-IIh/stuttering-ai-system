@@ -76,7 +76,10 @@ async def lifespan(app: FastAPI):
         raise
     app.state.model_service = model_service
     app.state.service_version = settings.SERVICE_VERSION
-    app.state.feedback_store = FeedbackStore(settings.FEEDBACK_DIR)
+    app.state.feedback_store = FeedbackStore(
+        settings.FEEDBACK_DIR,
+        max_audio_bytes=settings.MAX_FEEDBACK_AUDIO_MB * 1024 * 1024,
+    )
     log.info(
         "model_ready",
         loaded=model_service.is_loaded(),
