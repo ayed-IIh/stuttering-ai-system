@@ -20,6 +20,7 @@ from backend.app.middleware import (
 )
 from backend.services.feedback_service import FeedbackStore
 from backend.services.model_service import ModelService
+from backend.services.s3_storage import S3Storage
 
 logger = structlog.get_logger(__name__)
 
@@ -76,18 +77,34 @@ async def lifespan(app: FastAPI):
         raise
     app.state.model_service = model_service
     app.state.service_version = settings.SERVICE_VERSION
+    # Optional S3 backend for audio + the HITL corpus. When configured, both
+    # /predict (download a clip by key) and /feedback (store the corpus) use it.
+    s3 = None
+    if settings.STORAGE_BACKEND == "s3":
+        s3 = S3Storage(
+            settings.S3_BUCKET,
+            region=settings.S3_REGION,
+            endpoint_url=settings.S3_ENDPOINT_URL,
+        )
+    app.state.s3 = s3
+    app.state.s3_predict_prefix = settings.S3_PREDICT_PREFIX
     app.state.feedback_store = FeedbackStore(
         settings.FEEDBACK_DIR,
         max_audio_bytes=settings.MAX_FEEDBACK_AUDIO_MB * 1024 * 1024,
+        s3=s3,
+        s3_prefix=settings.S3_FEEDBACK_PREFIX,
     )
     log.info(
         "model_ready",
         loaded=model_service.is_loaded(),
+        storage_backend=settings.STORAGE_BACKEND,
         feedback_dir=settings.FEEDBACK_DIR,
     )
     yield
     model_service.shutdown()
     app.state.model_service = None
+    app.state.feedback_store = None
+    app.state.s3 = None
     log.info("app_shutdown")
 
 

@@ -7,7 +7,8 @@ import uuid
 import wave
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -151,17 +152,9 @@ def _wav_duration_sec(audio_bytes: bytes) -> float:
 
 
 def _confidence_scores_for_db(raw: dict[str, float]) -> ConfidenceScores:
-    keys = (
-        "fluent",
-        "blocks",
-        "interjections",
-        "prolongations",
-        "part_word_repetition",
-        "phrase_repetition",
-        "word_repetition",
-    )
+    # Source the keys from the canonical taxonomy, not a hand-maintained copy.
     norm = {str(k).lower(): float(v) for k, v in raw.items()}
-    merged = {k: float(norm.get(k, 0.0)) for k in keys}
+    merged = {k: float(norm.get(k, 0.0)) for k in CLASS_LABELS}
     return ConfidenceScores(**merged)
 
 
@@ -232,6 +225,59 @@ async def _persist_prediction(
         logger.exception("Prediction DB insert failed")
 
 
+def _http_error(status: int, code: str, message: str, detail: str) -> HTTPException:
+    return HTTPException(
+        status_code=status,
+        detail=ErrorResponse(
+            error_code=code, message=message, detail=detail
+        ).model_dump(),
+    )
+
+
+async def _resolve_predict_audio(
+    request: Request,
+    audio_file: UploadFile | None,
+    s3_key: str | None,
+    max_size_mb: int,
+) -> bytes:
+    """Return the audio bytes for /predict from S3 (by key) or a multipart
+    upload. Exactly one source must be supplied."""
+    if s3_key:
+        s3 = getattr(request.app.state, "s3", None)
+        if s3 is None:
+            raise _http_error(
+                400, "S3_NOT_CONFIGURED", "S3 is not configured",
+                "Set STORAGE_BACKEND=s3 to use s3_key.",
+            )
+        from backend.services.s3_storage import S3Error
+
+        try:
+            # boto3 is blocking — keep it off the event loop.
+            data = await run_in_threadpool(s3.download_bytes, s3_key)
+        except S3Error as exc:
+            raise _http_error(
+                400, "S3_DOWNLOAD_FAILED", "Could not fetch audio from S3", str(exc)
+            ) from exc
+        max_bytes = max_size_mb * 1024 * 1024
+        if len(data) > max_bytes:
+            raise _http_error(
+                413, "FILE_TOO_LARGE", "Audio exceeds size limit",
+                f"{len(data)} bytes > {max_bytes} bytes",
+            )
+        if data[:4] != b"RIFF":
+            raise _http_error(
+                415, "UNSUPPORTED_MEDIA_TYPE", "Audio must be WAV",
+                "object is missing the RIFF/WAVE header",
+            )
+        return data
+    if audio_file is not None:
+        return await validate_audio_upload(audio_file, max_size_mb)
+    raise _http_error(
+        422, "MISSING_AUDIO", "No audio provided",
+        "Provide exactly one of: audio_file (multipart) or s3_key (form field).",
+    )
+
+
 @router.post(
     "/predict",
     response_model=PredictionResponse,
@@ -246,13 +292,14 @@ async def _persist_prediction(
 )
 async def predict(
     request: Request,
-    audio_file: UploadFile = File(...),
+    audio_file: UploadFile | None = File(None),
+    s3_key: str | None = Form(None),
     model_service: ModelService = Depends(get_model_service),
     db: AsyncSession | None = Depends(get_db),
 ) -> PredictionResponse:
     started_at = time.perf_counter()
     max_size_mb = getattr(request.app.state.settings, "MAX_AUDIO_SIZE_MB", 10)
-    audio_bytes = await validate_audio_upload(audio_file, max_size_mb)
+    audio_bytes = await _resolve_predict_audio(request, audio_file, s3_key, max_size_mb)
     request_id = str(uuid.uuid4())
     try:
         prediction = model_service.predict(audio_bytes)
@@ -307,7 +354,7 @@ async def predict(
         db,
         request=request,
         audio_bytes=audio_bytes,
-        audio_filename=audio_file.filename,
+        audio_filename=(audio_file.filename if audio_file is not None else s3_key),
         response=response,
     )
     return response

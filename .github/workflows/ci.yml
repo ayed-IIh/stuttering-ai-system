@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "feature/*"
+      - "feat/*"
+      - "fix/*"
 
   pull_request:
     branches:
@@ -37,5 +39,13 @@ jobs:
       - name: Run flake8
         run: flake8 ai/ backend/ --config=.flake8
 
-      - name: Run pytest (unit tests only)
-        run: pytest ai/ backend/ -v --disable-warnings || echo "No tests found, skipping"
+      - name: Run pytest (fast unit tests)
+        # NOTE: do NOT mask failures with `|| echo ...` — that turns a red build
+        # green. Exit code 5 (no tests collected) is treated as success; any
+        # real failure/error fails the job. The heavy model-instantiation tests
+        # under tests/ (HF downloads) are run separately, not on every PR.
+        run: |
+          pytest ai/ backend/ -v --disable-warnings
+          code=$?
+          if [ "$code" -eq 5 ]; then echo "No tests collected — ok."; exit 0; fi
+          exit $code

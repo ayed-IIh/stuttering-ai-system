@@ -31,10 +31,9 @@ class Settings(BaseSettings):
         validation_alias="ALLOWED_ORIGINS",
     )
     PRODUCTION_MODE: bool = False
-    DB_URL: str = Field(
-        default="postgresql://user:password@localhost:5432/stuttering_ai",
-        description="Database URL (placeholder default for local dev).",
-    )
+    # NOTE: the DB connection is built independently in backend/db/database.py
+    # from the POSTGRES_* vars — there is intentionally no DB URL setting here
+    # (a second, divergent DB-config mechanism was removed).
     SERVICE_VERSION: str = "0.1.0"
     LOG_LEVEL: str = "INFO"
     FEEDBACK_DIR: str = Field(
@@ -48,6 +47,33 @@ class Settings(BaseSettings):
         default=5,
         description="Max decoded WAV size accepted by POST /feedback (MB).",
     )
+    # --- S3 storage (audio + HITL corpus) ---
+    STORAGE_BACKEND: Literal["local", "s3"] = Field(
+        default="local",
+        description="Where feedback audio is stored: local dir or s3 bucket.",
+    )
+    S3_BUCKET: str = Field(default="", description="S3 bucket for audio + corpus.")
+    S3_REGION: str = Field(
+        default="", description="AWS region (blank = default credential chain)."
+    )
+    S3_ENDPOINT_URL: str = Field(
+        default="",
+        description="Override S3 endpoint (S3-compatible store or local mock).",
+    )
+    S3_PREDICT_PREFIX: str = Field(
+        default="predict-audio/",
+        description="Key prefix for clips the mobile uploads for /predict.",
+    )
+    S3_FEEDBACK_PREFIX: str = Field(
+        default="feedback/",
+        description="Key prefix for the HITL retraining corpus.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_s3_settings(self) -> Settings:
+        if self.STORAGE_BACKEND == "s3" and not self.S3_BUCKET:
+            raise ValueError("S3_BUCKET is required when STORAGE_BACKEND=s3")
+        return self
 
     @field_validator("allowed_origins_raw", mode="before")
     @classmethod

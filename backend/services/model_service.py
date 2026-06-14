@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any
 
 import torchaudio
-import torchaudio.functional as TAF
 
 from ai.preprocessing.audio_loader import (
     TARGET_DURATION_SEC,
@@ -168,6 +167,16 @@ class ModelService:
 
         self._model_config = self._read_json_config(config_path)
         self._class_names = self._extract_class_names(self._model_config)
+        # The DB enum and the mobile contract assume the canonical taxonomy. If a
+        # loaded config.json diverges, predicted_class could fall outside the
+        # enum and confidence_scores would be zero-filled — warn loudly.
+        if list(self._class_names) != list(CLASS_LABELS):
+            logger.warning(
+                "Loaded model labels %s differ from the canonical taxonomy %s — "
+                "predictions may not map to the DB enum / mobile contract.",
+                self._class_names,
+                list(CLASS_LABELS),
+            )
         data_cfg = _data_block(self._model_config)
         self._target_sample_rate = int(
             data_cfg.get("target_sr")
