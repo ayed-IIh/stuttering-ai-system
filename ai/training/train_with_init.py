@@ -26,6 +26,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from ai.training import train as train_module  # noqa: E402
+from shared.labels import NUM_CLASSES  # noqa: E402
 
 
 _INIT_CKPT = os.environ.get("INIT_CHECKPOINT_PATH", "").strip()
@@ -41,7 +42,9 @@ if _INIT_CKPT:
         if not ckpt_path.exists():
             raise FileNotFoundError(f"INIT_CHECKPOINT_PATH not found: {ckpt_path}")
         print(f"[init-ckpt] loading weights from {ckpt_path}")
-        state = torch.load(ckpt_path, map_location=device, weights_only=False)
+        # Load to CPU first — checkpoints carry optimizer/scheduler state, and
+        # mapping all of it straight to CUDA can spike VRAM before training.
+        state = torch.load(ckpt_path, map_location="cpu", weights_only=False)
         sd = state.get("model_state_dict", state)
         missing, unexpected = model.load_state_dict(sd, strict=False)
         if missing:
@@ -61,6 +64,13 @@ if _CLASS_WEIGHTS:
         [float(w) for w in _CLASS_WEIGHTS.split(",")],
         dtype=torch.float32,
     )
+    # Catch a misconfigured CLASS_WEIGHTS at startup, not mid-training when
+    # cross_entropy fails on a weight/class shape mismatch.
+    if _weights_tensor.numel() != NUM_CLASSES:
+        raise ValueError(
+            f"CLASS_WEIGHTS has {_weights_tensor.numel()} values but the model "
+            f"has {NUM_CLASSES} classes — counts must match"
+        )
     print(f"[class-weights] applying weights: {_weights_tensor.tolist()}")
 
     _original_cross_entropy = F.cross_entropy

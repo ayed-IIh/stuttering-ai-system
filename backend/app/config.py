@@ -37,6 +37,17 @@ class Settings(BaseSettings):
     )
     SERVICE_VERSION: str = "0.1.0"
     LOG_LEVEL: str = "INFO"
+    FEEDBACK_DIR: str = Field(
+        default="feedback_data",
+        description=(
+            "Directory where HITL therapist corrections (audio WAVs + a JSONL "
+            "manifest) are stored for later retraining."
+        ),
+    )
+    MAX_FEEDBACK_AUDIO_MB: int = Field(
+        default=5,
+        description="Max decoded WAV size accepted by POST /feedback (MB).",
+    )
 
     @field_validator("allowed_origins_raw", mode="before")
     @classmethod

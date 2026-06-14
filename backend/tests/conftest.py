@@ -105,15 +105,19 @@ def test_settings() -> Any:
 
 
 @pytest.fixture
-def test_app(test_settings: Any) -> FastAPI:
+def test_app(test_settings: Any, tmp_path_factory: pytest.TempPathFactory) -> FastAPI:
     from backend.api.routes import health, router
     from backend.app.middleware import RequestLoggingMiddleware, register_exception_handlers
     from backend.db.database import get_db
+    from backend.services.feedback_service import FeedbackStore
 
     app = FastAPI(title="Stuttering AI API (integration tests)")
     app.state.settings = test_settings
     app.state.model_service = MockModelService(test_settings)
     app.state.service_version = test_settings.SERVICE_VERSION
+    # tmp_path_factory is auto-cleaned by pytest (no leaked temp dirs).
+    feedback_dir = tmp_path_factory.mktemp("hitl_test")
+    app.state.feedback_store = FeedbackStore(str(feedback_dir))
 
     app.add_middleware(RequestLoggingMiddleware)
     register_exception_handlers(app)
