@@ -3,3 +3,19 @@
 __pycache__/
 *.pyc
 node_modules/
+
+# Large data / artifacts that must NOT be sent as build context. The image only
+# needs requirements.txt, shared/, backend/, ai/, and exports/v3.0/.
+DataSets/
+runs/
+*.ipynb
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+feedback_data/
+
+# Keep only the production model export; exclude the other (large) versions.
+exports/v1.0/
+exports/v2.0/
+exports/v3.0-v4-backup/

@@ -35,19 +35,11 @@ def _stub_async_engine() -> None:
     sa_asyncio.create_async_engine = _fake_create_async_engine  # type: ignore[method-assign]
 
 
-def _stub_librosa_if_missing() -> None:
-    """Stub librosa only when it's actually not installed.
-
-    The original test layout was designed for a slim CI image without librosa.
-    With librosa installed, transformers' lazy-import scan trips on a bogus
-    stub (no ``__spec__``), so we now only stub when needed.
-    """
-    import importlib.util
+def _stub_librosa() -> None:
+    """``model_service`` imports ``audio_loader``, which imports librosa at import time."""
     import sys
     import types
 
-    if importlib.util.find_spec("librosa") is not None:
-        return
     effects = types.ModuleType("librosa.effects")
     effects.trim = lambda audio_np, top_db=30.0: (audio_np, None)
     lib = types.ModuleType("librosa")
@@ -57,21 +49,14 @@ def _stub_librosa_if_missing() -> None:
 
 
 _stub_async_engine()
-_stub_librosa_if_missing()
+_stub_librosa()
 
 
 class MockModelService:
-    """Mock returning multi-label predictions for any decodable WAV.
-
-    Default behaviour: every class gets a uniform sigmoid score of ``1/n``,
-    which is below threshold 0.5, so ``predicted_classes`` is empty. Tests can
-    override per-class scores by setting ``mock.next_scores`` to a dict before
-    calling predict — useful for happy-path assertions.
-    """
+    """Fixed prediction for any decodable WAV; raises ``InvalidAudioError`` for corrupt audio."""
 
     def __init__(self, settings: Any = None) -> None:
         self._settings = settings
-        self.next_scores: dict[str, float] | None = None
 
     async def load(self) -> None:
         return None
@@ -88,25 +73,11 @@ class MockModelService:
         except wave.Error as exc:
             raise InvalidAudioError(f"Corrupt or undecodable WAV: {exc}") from exc
 
-        threshold = float(getattr(self._settings, "MULTI_LABEL_THRESHOLD", 0.5))
-        if self.next_scores is not None:
-            all_scores = {label: float(self.next_scores.get(label, 0.0)) for label in CLASS_LABELS}
-        else:
-            n = len(CLASS_LABELS)
-            all_scores = {label: round(1.0 / n, 6) for label in CLASS_LABELS}
-        predicted_classes = sorted(
-            [
-                {"class": label, "confidence": score}
-                for label, score in all_scores.items()
-                if score >= threshold
-            ],
-            key=lambda d: d["confidence"],
-            reverse=True,
-        )
+        n = len(CLASS_LABELS)
+        scores = {label: round(1.0 / n, 6) for label in CLASS_LABELS}
         return {
-            "predicted_classes": predicted_classes,
-            "all_scores": all_scores,
-            "threshold": threshold,
+            "predicted_class": CLASS_LABELS[0],
+            "confidence_scores": scores,
             "processing_time_ms": 1,
             "model_version": "mock-v1",
         }
@@ -134,15 +105,19 @@ def test_settings() -> Any:
 
 
 @pytest.fixture
-def test_app(test_settings: Any) -> FastAPI:
+def test_app(test_settings: Any, tmp_path_factory: pytest.TempPathFactory) -> FastAPI:
     from backend.api.routes import health, router
     from backend.app.middleware import RequestLoggingMiddleware, register_exception_handlers
     from backend.db.database import get_db
+    from backend.services.feedback_service import FeedbackStore
 
     app = FastAPI(title="Stuttering AI API (integration tests)")
     app.state.settings = test_settings
     app.state.model_service = MockModelService(test_settings)
     app.state.service_version = test_settings.SERVICE_VERSION
+    # tmp_path_factory is auto-cleaned by pytest (no leaked temp dirs).
+    feedback_dir = tmp_path_factory.mktemp("hitl_test")
+    app.state.feedback_store = FeedbackStore(str(feedback_dir))
 
     app.add_middleware(RequestLoggingMiddleware)
     register_exception_handlers(app)

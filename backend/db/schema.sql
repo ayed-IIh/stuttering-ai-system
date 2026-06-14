@@ -1,17 +1,3 @@
--- =============================================================================
--- Stuttering-AI database schema (multi-label).
---
--- One ``predictions`` row per API call holds metadata and the per-class
--- sigmoid distribution (``all_scores`` JSONB). One ``prediction_classes``
--- child row per detected class holds (class_label, confidence) for the
--- subset that crossed the multi-label threshold.
---
--- IMPORTANT: confidence values in ``prediction_classes`` and the per-key
--- floats in ``all_scores`` are independent per-class sigmoid probabilities.
--- They do **NOT** sum to 1.0 across the seven classes — that's a softmax
--- invariant the new schema deliberately drops.
--- =============================================================================
-
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
@@ -26,23 +12,35 @@ CREATE TABLE IF NOT EXISTS model_versions (
     notes            TEXT
 );
 
--- Table: predictions (parent row, one per API call)
+-- Enum type for normalized predicted_class values
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'stutterclass') THEN
+        CREATE TYPE stutterclass AS ENUM (
+            'fluent',
+            'blocks',
+            'interjections',
+            'prolongations',
+            'part_word_repetition',
+            'phrase_repetition',
+            'word_repetition'
+        );
+    END IF;
+END$$;
+
+-- Table: predictions
 CREATE TABLE IF NOT EXISTS predictions (
     id                   UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at           TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     audio_filename       VARCHAR(500),
     audio_duration_sec   FLOAT,
-    all_scores           JSONB         NOT NULL,
+    predicted_class      stutterclass  NOT NULL,
+    confidence_scores    JSONB         NOT NULL,
     model_version_id     UUID          NOT NULL,
     processing_time_ms   INTEGER,
     client_ip            INET,
     request_id           UUID          NOT NULL UNIQUE
 );
-
-COMMENT ON COLUMN predictions.all_scores IS
-    'Per-class sigmoid probabilities keyed by shared.labels.CLASS_LABELS. '
-    'Independent per-class — do NOT sum to 1.0. Same value-set as the wire '
-    'response field of the same name (see docs/api_contract.md v2.0).';
 
 -- Foreign Key: predictions -> model_versions
 DO $$
@@ -59,50 +57,47 @@ BEGIN
     END IF;
 END$$;
 
--- Table: prediction_classes (multi-label child of predictions)
--- One row per detected class for a given prediction (server-side threshold
--- applied). Empty predictions produce zero child rows.
-CREATE TABLE IF NOT EXISTS prediction_classes (
-    id             UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-    prediction_id  UUID          NOT NULL REFERENCES predictions(id) ON DELETE CASCADE,
-    class_label    TEXT          NOT NULL,
-    confidence     NUMERIC(6,5)  NOT NULL CHECK (confidence BETWEEN 0 AND 1),
-    created_at     TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    CONSTRAINT chk_prediction_classes_class_label CHECK (
-        class_label = ANY(ARRAY[
-            'fluent',
-            'blocks',
-            'interjections',
-            'prolongations',
-            'part_word_repetition',
-            'phrase_repetition',
-            'word_repetition'
-        ])
-    ),
-    -- One row per (prediction, class) — never store the same class twice.
-    CONSTRAINT uq_prediction_classes_prediction_id_class_label
-        UNIQUE (prediction_id, class_label)
-);
+-- Helper function: counts keys in a JSONB object.
+CREATE OR REPLACE FUNCTION jsonb_key_count(j JSONB)
+RETURNS INTEGER
+LANGUAGE SQL
+IMMUTABLE STRICT
+AS $$
+    SELECT count(*)::INTEGER FROM jsonb_object_keys(j);
+$$;
 
-COMMENT ON TABLE prediction_classes IS
-    'Per-class detections for multi-label inference. One row per class whose '
-    'sigmoid probability >= the server-side decision threshold at inference '
-    'time. See docs/api_contract.md (v2.0).';
+-- Check constraint: confidence_scores must contain exactly
+-- the 7 class keys and no others.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'chk_confidence_scores_keys'
+    ) THEN
+        ALTER TABLE predictions
+            ADD CONSTRAINT chk_confidence_scores_keys
+            CHECK (
+                jsonb_typeof(confidence_scores) = 'object'
+                AND confidence_scores ?& ARRAY[
+                    'fluent',
+                    'blocks',
+                    'interjections',
+                    'prolongations',
+                    'part_word_repetition',
+                    'phrase_repetition',
+                    'word_repetition'
+                ]
+                AND jsonb_key_count(confidence_scores) = 7
+            );
+    END IF;
+END$$;
 
-COMMENT ON COLUMN prediction_classes.confidence IS
-    'Independent sigmoid probability for this class. Values across rows for '
-    'the same prediction_id do NOT sum to 1.0 — multi-label, not softmax.';
-
--- Indexes on predictions (kept after dropping idx_predictions_predicted_class)
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_predictions_created_at
     ON predictions (created_at);
 
+CREATE INDEX IF NOT EXISTS idx_predictions_predicted_class
+    ON predictions (predicted_class);
+
 CREATE INDEX IF NOT EXISTS idx_predictions_model_version_id
     ON predictions (model_version_id);
-
--- Indexes on prediction_classes
-CREATE INDEX IF NOT EXISTS idx_prediction_classes_prediction_id
-    ON prediction_classes (prediction_id);
-
-CREATE INDEX IF NOT EXISTS idx_prediction_classes_class_label
-    ON prediction_classes (class_label);

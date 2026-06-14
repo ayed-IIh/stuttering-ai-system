@@ -1,11 +1,4 @@
-"""Tests for backend.services.model_service (inference + audio preprocessing).
-
-Note: many of these tests use ``torchaudio.save`` to produce WAV fixtures.
-Starting with torchaudio 2.9 that path requires the ``torchcodec`` native
-runtime (FFmpeg). On older torchaudio (<2.9) WAV save uses soundfile/SoX
-and works without FFmpeg, so we only skip when both (a) torchaudio is 2.9+
-AND (b) torchcodec isn't importable.
-"""
+"""Tests for backend.services.model_service (inference + audio preprocessing)."""
 
 from __future__ import annotations
 
@@ -15,34 +8,6 @@ from pathlib import Path
 import pytest
 import torch
 import torchaudio
-from packaging.version import InvalidVersion, Version
-
-_TORCHCODEC_REQUIRED_FROM = Version("2.9.0")
-
-
-def _torchaudio_needs_torchcodec() -> bool:
-    """True iff installed torchaudio routes WAV save through torchcodec.
-
-    Catches only ``InvalidVersion`` (raised by ``Version`` on PEP 440-invalid
-    strings, e.g. dev/local-build tags like ``"2.9.0+cu121.dev"``). A
-    catch-all here would mask import-time bugs.
-    """
-    try:
-        return Version(torchaudio.__version__) >= _TORCHCODEC_REQUIRED_FROM
-    except InvalidVersion:  # pragma: no cover - dev-version strings
-        return True
-
-
-if _torchaudio_needs_torchcodec():
-    try:  # noqa: SIM105
-        import torchcodec  # noqa: F401
-    except (ImportError, OSError, RuntimeError) as _exc:  # pragma: no cover - env-dependent
-        pytest.skip(
-            f"torchaudio {torchaudio.__version__} requires torchcodec for "
-            f"WAV save, and it is unavailable ({_exc.__class__.__name__}). "
-            f"Install FFmpeg and torchcodec to enable.",
-            allow_module_level=True,
-        )
 
 from ai.preprocessing.audio_loader import TARGET_SAMPLES
 from backend.app.config import Settings, clear_settings_cache
@@ -101,41 +66,18 @@ def fallback_settings() -> Settings:
 
 
 def test_predict_fallback_three_wav_files(fallback_settings: Settings, three_wav_fixtures: list[Path]):
-    """ModelService.predict() must return the multi-label envelope.
-
-    Old single-label fields (``predicted_class``, ``confidence_scores``) were
-    removed when the service switched to BCE + sigmoid + threshold. The new
-    shape is ``{predicted_classes, all_scores, threshold,
-    processing_time_ms, model_version}``.
-    """
-    from shared.labels import CLASS_LABELS, NUM_CLASSES
-
     svc = ModelService(fallback_settings)
     assert svc.is_loaded()
     for p in three_wav_fixtures:
         data = p.read_bytes()
         out = svc.predict(data)
         assert set(out.keys()) == {
-            "predicted_classes",
-            "all_scores",
-            "threshold",
+            "predicted_class",
+            "confidence_scores",
             "processing_time_ms",
             "model_version",
         }
-        # all_scores must be a 7-key dict matching the canonical taxonomy.
-        assert isinstance(out["all_scores"], dict)
-        assert set(out["all_scores"].keys()) == set(CLASS_LABELS)
-        assert len(out["all_scores"]) == NUM_CLASSES
-        # Every score is an independent sigmoid probability in [0, 1].
-        for score in out["all_scores"].values():
-            assert isinstance(score, (int, float))
-            assert 0.0 <= float(score) <= 1.0
-        # predicted_classes is a (possibly empty) list of {class, confidence}.
-        assert isinstance(out["predicted_classes"], list)
-        for entry in out["predicted_classes"]:
-            assert entry["class"] in CLASS_LABELS
-            assert 0.0 <= float(entry["confidence"]) <= 1.0
-        assert 0.0 <= float(out["threshold"]) <= 1.0
+        assert isinstance(out["confidence_scores"], dict)
         assert out["model_version"] == "test-0"
         assert out["processing_time_ms"] >= 0
 

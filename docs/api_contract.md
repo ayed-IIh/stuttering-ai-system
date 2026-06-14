@@ -1,107 +1,163 @@
 # Stuttering Inference Service — REST API Contract
 
-**Document version:** 2.0
-**Status:** Approved — supersedes the draft v1.0 single-label contract.
-**Related work:** `feature/multi-label-classification` switches loss to BCE,
-decode to sigmoid + threshold, and response shape to multi-label.
+**Document version:** 1.0  
+**Status:** Draft — Pending review (Adan: output format alignment; Wael: DB schema alignment)  
+**Related task:** SDQ-02 (implementation begins after this contract is approved)
 
-This document is the authoritative contract for the REST endpoints exposed by
-the FastAPI inference service. The implementation in `backend/api/routes.py`
-must match this document; any drift is a bug.
+This document defines the complete REST API contract for the stuttering inference service. No implementation code should be written until this contract is reviewed and approved by the designated reviewers.
 
 ---
 
-## 1. Conventions
+## 1. Base URL and Conventions
 
-- **Base path:** `/api/v1/` (router mounted at this prefix by `backend/app/main.py`).
-- **Content-Type:** all success and error responses use `application/json`.
+- **Base path:** `/` (all endpoints are relative to the service root).
+- **Content negotiation:** Success responses use `Content-Type: application/json`. Error responses use `Content-Type: application/json`.
 - **Character encoding:** UTF-8.
-- **Class names** appearing in any response field always come from
-  `shared.labels.CLASS_LABELS`. They are the 7-element lowercase taxonomy:
-  ```text
-  fluent, blocks, interjections, prolongations,
-  part_word_repetition, phrase_repetition, word_repetition
-  ```
-  Do not capitalize, alias, or rename them on the wire.
 
 ---
 
 ## 2. Endpoints
 
-### 2.1 POST /api/v1/predict
+### 2.1 POST /predict
 
-Submit a WAV file for **multi-label** stuttering classification. The model
-runs an independent binary classifier per class; any subset (including the
-empty set) may be returned.
+Submit an audio file for stuttering classification. The model returns a predicted class and per-class confidence scores.
 
 #### Request
 
 | Aspect | Specification |
-|---|---|
-| Method | `POST` |
-| Content-Type | `multipart/form-data` |
-| Body | Form data with one field: `audio_file` |
+|--------|----------------|
+| **Method** | `POST` |
+| **Content-Type** | `multipart/form-data` |
+| **Body** | Form data (see below) |
+
+**Form fields:**
 
 | Field | Type | Required | Description |
-|---|---|---|---|
-| `audio_file` | binary (file) | **Yes** | WAV. MIME must be `audio/wav` or `audio/x-wav`. Magic bytes must start with `RIFF`. Max size from `MAX_AUDIO_SIZE_MB` (default 10 MB). |
+|-------|------|----------|-------------|
+| `audio_file` | binary (file) | **Yes** | The audio file to classify. Must be WAV. |
+| `sample_rate_hint` | integer (form field) | **Yes** | Expected sample rate in Hz (e.g. `16000`). Server may use this for validation or resampling. |
 
-There is **no** `sample_rate_hint` field (removed in v2.0). The server resamples
-internally to the target sample rate (`audio_loader.target_sr`, default 16 kHz)
-and then pads/truncates the waveform to `audio_loader.TARGET_SAMPLES`
-(a target sample **count**, not a sample rate).
+**Request constraints:**
+
+| Constraint | Rule | Default / Notes |
+|------------|------|------------------|
+| **Accepted formats** | File must be WAV. Accepted: filename extension `.wav` and `Content-Type: audio/wav` (or `audio/wave`). | Server may reject other types with 415. |
+| **Max file size** | Configurable maximum size in bytes. | Default: **10 MB** (10,485,760 bytes). Larger files → 413. |
+| **Sample rate hint** | Must be present and represent a valid positive integer (Hz). | Invalid or missing → 400. |
+
+**Example request (conceptual):**
+
+```http
+POST /predict HTTP/1.1
+Host: inference.example.com
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="audio_file"; filename="recording.wav"
+Content-Type: audio/wav
+
+<binary data>
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sample_rate_hint"
+
+16000
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+```
 
 #### Success response (200 OK)
 
+**Body schema:**
+
 ```json
 {
-  "predicted_classes": [
-    {"class": "blocks",        "confidence": 0.87},
-    {"class": "prolongations", "confidence": 0.64}
-  ],
-  "all_scores": {
-    "fluent":               0.04,
-    "blocks":               0.87,
-    "interjections":        0.05,
-    "prolongations":        0.64,
-    "part_word_repetition": 0.11,
-    "phrase_repetition":    0.03,
-    "word_repetition":      0.06
+  "predicted_class": "string",
+  "confidence_scores": {
+    "Fluent": 0.0,
+    "Blocks": 0.0,
+    "Prolongations": 0.0,
+    "Repetitions": 0.0,
+    "Interjections": 0.0
   },
-  "threshold": 0.5,
-  "processing_time_ms": 145,
+  "processing_time_ms": 0,
+  "model_version": "string",
+  "request_id": "string"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `predicted_class` | string | One of: `"Fluent"`, `"Blocks"`, `"Prolongations"`, `"Repetitions"`, `"Interjections"`. |
+| `confidence_scores` | object | Maps each class name to a probability in [0.0, 1.0]. Sum should be 1.0. |
+| `processing_time_ms` | integer | Time spent in model inference (and any mandatory preprocessing), in milliseconds. ≥ 0. |
+| `model_version` | string | Identifier of the model version that produced the prediction (e.g. semver or commit hash). |
+| `request_id` | string | Unique id for this request (e.g. UUID). For logging and correlation. |
+
+**Example:**
+
+```json
+{
+  "predicted_class": "Fluent",
+  "confidence_scores": {
+    "Fluent": 0.92,
+    "Blocks": 0.02,
+    "Prolongations": 0.01,
+    "Repetitions": 0.03,
+    "Interjections": 0.02
+  },
+  "processing_time_ms": 45,
   "model_version": "1.0.0",
   "request_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-| Field | Type | Description |
-|---|---|---|
-| `predicted_classes` | array of `{class, confidence}` | Every class whose sigmoid probability is `>= threshold`. **May be empty.** Sorted by descending confidence. |
-| `predicted_classes[].class` | string | One of `CLASS_LABELS`. |
-| `predicted_classes[].confidence` | number ∈ [0, 1] | Sigmoid probability for this class. |
-| `all_scores` | object | Always exactly 7 keys (one per `CLASS_LABELS` entry). **Independent sigmoid probabilities — values do NOT sum to 1.0.** |
-| `threshold` | number ∈ [0, 1] | The decision threshold the server applied to produce `predicted_classes`. Sourced from `Settings.MULTI_LABEL_THRESHOLD`. |
-| `processing_time_ms` | integer ≥ 0 | Wall-clock milliseconds spent inside `ModelService.predict`. |
-| `model_version` | string | Identifier of the loaded model artifact. |
-| `request_id` | string (UUID v4) | Server-generated per request, returned for correlation. |
+**HTTP status:** `200 OK`
 
-#### Error responses
+#### Error responses (POST /predict)
 
-All errors use the [Standard error envelope](#4-standard-error-envelope).
+All error responses use the [Standard error response schema](#4-standard-error-response-schema).
 
-| Status | error_code | Triggered by |
-|---|---|---|
-| 400 | `INVALID_REQUEST` | Malformed form data, invalid WAV magic bytes. |
-| 413 | `FILE_TOO_LARGE` | Uploaded body or declared content-length > `MAX_AUDIO_SIZE_MB`. |
-| 415 | `UNSUPPORTED_MEDIA_TYPE` | MIME type not in `{audio/wav, audio/x-wav}`. |
-| 422 | `UNPROCESSABLE_AUDIO` | File is valid WAV by header but cannot be decoded/preprocessed (e.g. corrupt frames, missing audio data). Also returned when the required `audio_file` field is missing (FastAPI form validation). |
-| 500 | `MODEL_ERROR` | `PredictionError` raised inside the inference path. |
-| 503 | `SERVICE_UNAVAILABLE` | `ModelNotLoadedError` (model has not finished loading or was not initialized). |
+| HTTP status | error_code (example) | When to use |
+|-------------|----------------------|-------------|
+| **400 Bad Request** | `INVALID_REQUEST` | Missing `audio_file` or `sample_rate_hint`; invalid or non-numeric `sample_rate_hint`; malformed form data. |
+| **413 Payload Too Large** | `FILE_TOO_LARGE` | File size exceeds configured max (e.g. default 10 MB). |
+| **415 Unsupported Media Type** | `UNSUPPORTED_MEDIA_TYPE` | File is not WAV (wrong extension or Content-Type). |
+| **422 Unprocessable Entity** | `UNPROCESSABLE_AUDIO` | File is valid WAV but cannot be processed (e.g. duration too short/long, corrupt frames, unsupported sample rate after validation). |
+| **500 Internal Server Error** | `MODEL_ERROR` | Inference or model loading failed (e.g. runtime error, corrupted model). |
 
 ---
 
-### 2.2 GET /api/v1/health
+### 2.2 GET /health
+
+Health check for the service and the loaded model.
+
+#### Request
+
+| Aspect | Specification |
+|--------|----------------|
+| **Method** | `GET` |
+| **Body** | None |
+
+#### Success response (200 OK)
+
+**Body schema:**
+
+```json
+{
+  "status": "ok",
+  "model_loaded": true,
+  "version": "string",
+  "uptime_seconds": 0
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `status` | string | Literal `"ok"` when the service is healthy. |
+| `model_loaded` | boolean | `true` if the inference model is loaded and ready; `false` otherwise. |
+| `version` | string | Service or app version (e.g. semver or git tag). |
+| `uptime_seconds` | integer | Seconds since the process started. ≥ 0. |
+
+**Example:**
 
 ```json
 {
@@ -112,101 +168,181 @@ All errors use the [Standard error envelope](#4-standard-error-envelope).
 }
 ```
 
-503 with `SERVICE_UNAVAILABLE` is returned only when `request.app.state.model_service` is `None` (service not constructed).
+**HTTP status:** `200 OK`
 
-### 2.3 GET /api/v1/classes
+#### Error responses (GET /health)
 
-Returns the taxonomy that the response classes are drawn from.
+All error responses use the [Standard error response schema](#4-standard-error-response-schema).
+
+| HTTP status | error_code (example) | When to use |
+|-------------|----------------------|-------------|
+| **503 Service Unavailable** | `SERVICE_UNAVAILABLE` | Service is not ready (e.g. model not loaded, dependency down). |
+
+---
+
+### 2.3 GET /classes
+
+Returns the set of output classes and their optional integer IDs (for DB or downstream alignment).
+
+#### Request
+
+| Aspect | Specification |
+|--------|----------------|
+| **Method** | `GET` |
+| **Body** | None |
+
+#### Success response (200 OK)
+
+**Body schema:**
 
 ```json
 {
-  "classes": ["fluent", "blocks", "interjections", "prolongations",
-              "part_word_repetition", "phrase_repetition", "word_repetition"],
+  "classes": ["string"],
   "label_to_id": {
-    "fluent": 0, "blocks": 1, "interjections": 2, "prolongations": 3,
-    "part_word_repetition": 4, "phrase_repetition": 5, "word_repetition": 6
-  },
-  "id_to_label": {"0": "fluent", "1": "blocks", "...": "..."}
+    "string": 0
+  }
 }
 ```
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `classes` | array of strings | Ordered list of class names. Same order as used in `confidence_scores` and `predicted_class`. |
+| `label_to_id` | object | Map from class label (string) to a stable integer ID (e.g. for database schema). Keys = `classes`; IDs are non-negative and unique. |
+
+**Example:**
+
+```json
+{
+  "classes": ["Fluent", "Blocks", "Prolongations", "Repetitions", "Interjections"],
+  "label_to_id": {
+    "Fluent": 0,
+    "Blocks": 1,
+    "Prolongations": 2,
+    "Repetitions": 3,
+    "Interjections": 4
+  }
+}
+```
+
+**HTTP status:** `200 OK`
+
+#### Error responses (GET /classes)
+
+All error responses use the [Standard error response schema](#4-standard-error-response-schema).
+
+| HTTP status | error_code (example) | When to use |
+|-------------|----------------------|-------------|
+| **500 Internal Server Error** | `MODEL_ERROR` or `INTERNAL_ERROR` | Server failed to build or load class metadata. |
+
 ---
 
-## 3. Threshold Semantics
+## 3. HTTP Status Code Summary
 
-`threshold` controls which classes appear in `predicted_classes`:
+| Code | Meaning | Used in |
+|------|---------|--------|
+| **200** | Success | POST /predict, GET /health, GET /classes |
+| **400** | Bad Request — invalid format, missing/invalid parameters, malformed form | POST /predict |
+| **413** | Payload Too Large — file exceeds max size | POST /predict |
+| **415** | Unsupported Media Type — not WAV | POST /predict |
+| **422** | Unprocessable Entity — audio not processable | POST /predict |
+| **500** | Internal Server Error — model or server error | POST /predict, GET /classes |
+| **503** | Service Unavailable — health check failing | GET /health |
 
-- A class is **included** when `sigmoid(logit) >= threshold`.
-- Equality counts as inclusion (so `threshold = 0.5` with `sigmoid = 0.5` includes the class).
-- `threshold` is a server-side setting (`MULTI_LABEL_THRESHOLD` in
-  `backend/app/config.py`), not a request parameter. Clients receive the value
-  the server applied so they can re-filter `all_scores` locally if desired.
-- The default is `0.5`. Per-class threshold tuning is expected at evaluation
-  time; when adopted, the wire field will become a `dict[str, float]` (one per
-  class) in a future minor version. For v2.0 it is a single float.
+All five required error cases from the contract are covered: **400** (invalid format), **413** (file too large), **415** (unsupported media type), **422** (unprocessable audio), **500** (model error); **503** is used for unhealthy service on GET /health.
 
 ---
 
-## 4. Standard error envelope
+## 4. Standard Error Response Schema
+
+All 4xx and 5xx responses MUST use this JSON schema.
+
+**Body schema:**
+
+```json
+{
+  "error_code": "string",
+  "message": "string",
+  "detail": "string"
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `error_code` | string | Machine-readable code (e.g. `INVALID_REQUEST`, `FILE_TOO_LARGE`, `UNSUPPORTED_MEDIA_TYPE`, `UNPROCESSABLE_AUDIO`, `MODEL_ERROR`). |
+| `message` | string | Short human-readable summary. |
+| `detail` | string | Optional extra context (e.g. validation failure reason, max size in bytes). Can be empty string if not applicable. |
+
+**Content-Type:** `application/json`
+
+**Example (413):**
 
 ```json
 {
   "error_code": "FILE_TOO_LARGE",
   "message": "Audio file exceeds maximum allowed size",
-  "detail": "Declared size exceeds max: 10485760 bytes"
+  "detail": "Max size: 10485760 bytes (10 MB)"
 }
 ```
 
-In production mode (`Settings.PRODUCTION_MODE == True`) the `detail` field is
-omitted to avoid leaking internal state. In development mode it carries the
-human-readable cause.
+**Example (422):**
+
+```json
+{
+  "error_code": "UNPROCESSABLE_AUDIO",
+  "message": "Audio could not be processed",
+  "detail": "Duration too short: 0.2 s (minimum 0.5 s)"
+}
+```
+
+**Example (503 — GET /health when unhealthy):**
+
+```json
+{
+  "error_code": "SERVICE_UNAVAILABLE",
+  "message": "Service is not ready",
+  "detail": "Model not loaded"
+}
+```
 
 ---
 
-## 5. Empty Result
+## 5. Edge Cases and Validation
 
-`predicted_classes` MAY be the empty list. This happens when the model's
-sigmoid output for every class is strictly below `threshold`.
+Implementations MUST handle the following in line with this contract:
 
-Recommended client behavior:
-
-- **UI**: show a neutral message like *"No stuttering detected above the
-  confidence threshold."* Do not silently fall back to "fluent" — the
-  distinction matters clinically.
-- **Database**: store the empty result as a session with zero rows in the
-  `prediction_classes` child table (see DB migration 002 — Step 9 work). Do
-  not coerce it into a `predicted_class="fluent"` row.
-
-An empty result is NOT an error and does NOT cause a non-200 status code.
-
----
-
-## 6. Important properties (read these)
-
-1. **`all_scores` is NOT a probability distribution.** Each value is an
-   independent binary sigmoid. They do not sum to 1.0, and the maximum may not
-   be the most "diagnostic" class — multiple may exceed the threshold simultaneously.
-
-2. **Class names are sourced from `shared/labels.py::CLASS_LABELS` everywhere.**
-   The server validates this at response build time (`PredictionResponse.all_scores`
-   field validator). If you see a different name or a missing key in any response,
-   that is a server bug — file an issue.
-
-3. **No client-supplied `sample_rate_hint`.** Sample rate is determined from the
-   uploaded WAV header and resampled internally.
-
-4. **`/api/v1/health` is the only health endpoint** clients should call.
-   `backend/app/main.py` also registers `/health` at the root for backwards
-   compatibility; this is undocumented and may be removed.
+| Case | Handling | Status |
+|------|-----------|--------|
+| Missing `audio_file` | Reject with 400, `error_code` e.g. `INVALID_REQUEST`. | 400 |
+| Empty file (0 bytes) | Reject with 400 or 422; prefer 422 `UNPROCESSABLE_AUDIO` if format is valid. | 400 / 422 |
+| Missing `sample_rate_hint` | Reject with 400, `INVALID_REQUEST`. | 400 |
+| Non-integer or invalid `sample_rate_hint` | Reject with 400, `INVALID_REQUEST`. | 400 |
+| File size > configured max | Reject with 413, `FILE_TOO_LARGE`. | 413 |
+| Wrong file type (e.g. .mp3, wrong Content-Type) | Reject with 415, `UNSUPPORTED_MEDIA_TYPE`. | 415 |
+| Valid WAV but unprocessable (corrupt, bad duration, etc.) | Reject with 422, `UNPROCESSABLE_AUDIO`. | 422 |
+| Model crash or load failure during inference | Reject with 500, `MODEL_ERROR`. | 500 |
+| Request not `multipart/form-data` for POST /predict | Reject with 400 or 415; recommend 415 if body is not form-data. | 400 / 415 |
+| Multiple `audio_file` parts | Server may use first part only; contract does not require multiple-file support. | — |
 
 ---
 
-## 7. Approval checklist
+## 6. Configuration
 
-- [x] Reviewed by Adan (model / output format alignment).
-- [x] Reviewed by Wael (DB schema alignment — see migration 002).
-- [x] Reviewed by Saddouq (API surface, error matrix).
-- [x] Implementation in `backend/api/routes.py` matches this document.
-- [x] Tests in `backend/tests/test_routes.py` assert this contract.
+| Setting | Description | Default |
+|--------|-------------|---------|
+| `max_file_size_bytes` | Maximum allowed size for `audio_file` (bytes). | 10,485,760 (10 MB) |
+| Accepted MIME types for audio | Allowed for `audio_file`. | `audio/wav`, `audio/wave` |
+| Accepted filename extension | Allowed for upload. | `.wav` |
 
-**End of contract v2.0.**
+---
+
+## 7. Review Checklist (Before SDQ-02)
+
+- [ ] **Adan (AI / output format):** Output format alignment — `predicted_class`, `confidence_scores` keys and order, and `GET /classes` match the trained model’s labels and IDs. Approve via PR comment.
+- [ ] **Wael (Backend & DB):** DB schema alignment — `label_to_id` and class names align with database enums/tables; `request_id` and response shape support persistence. Approve via PR comment.
+- [ ] Contract covers all three endpoints: POST /predict, GET /health, GET /classes.
+- [ ] Error schema and status codes (400, 413, 415, 422, 500, 503) are defined and accepted.
+- [ ] Document committed to the repo (e.g. in `docs/api_contract.md`).
+
+---
+
+**End of contract.** Implementation (SDQ-02) should start only after both reviewers have approved this document.

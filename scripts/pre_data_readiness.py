@@ -59,7 +59,7 @@ REQUIRED_FILES = (
     "ai/dataset/processed/test_manifest.csv",
 )
 
-MANIFEST_COLUMNS = ("file_path", "labels", "duration_sec", "sample_rate")
+MANIFEST_COLUMNS = ("file_path", "label", "label_id", "duration_sec", "sample_rate")
 MANIFEST_PATHS = (
     "ai/dataset/processed/train_manifest.csv",
     "ai/dataset/processed/val_manifest.csv",
@@ -224,10 +224,8 @@ def _check_manifests() -> StepResult:
             continue
 
         row_count = 0
-        valid_rows = 0
-        empty_labels_rows = 0
-        bad_rows = 0
-        unknown_tokens: set[str] = set()
+        bad_labels = 0
+        bad_label_ids = 0
         missing_local_files = 0
 
         with path.open("r", encoding="utf-8", newline="") as f:
@@ -244,44 +242,34 @@ def _check_manifests() -> StepResult:
 
             for row in reader:
                 row_count += 1
-                labels_raw = str(row.get("labels", "")).strip()
+                label = str(row.get("label", "")).strip()
+                label_id_raw = str(row.get("label_id", "")).strip()
                 file_path = str(row.get("file_path", "")).strip()
 
-                if not labels_raw:
-                    empty_labels_rows += 1
+                if label not in LABEL2ID:
+                    bad_labels += 1
                     continue
-
-                tokens = [t.strip() for t in labels_raw.split(",") if t.strip()]
-                if not tokens:
-                    empty_labels_rows += 1
+                try:
+                    label_id = int(label_id_raw)
+                except Exception:  # noqa: BLE001
+                    bad_label_ids += 1
                     continue
-
-                row_unknown = [t for t in tokens if t not in CLASS_LABELS]
-                if row_unknown:
-                    bad_rows += 1
-                    unknown_tokens.update(row_unknown)
-                    continue
-
-                valid_rows += 1
+                if LABEL2ID[label] != label_id:
+                    bad_label_ids += 1
                 if file_path and not Path(file_path).exists():
                     missing_local_files += 1
 
         if row_count == 0:
             status = "fail"
             details.append(f"{rel}: no rows found")
-        if empty_labels_rows > 0:
+        if bad_labels > 0:
             status = "fail"
-            details.append(f"{rel}: rows with empty labels field={empty_labels_rows}")
-        if bad_rows > 0:
+            details.append(f"{rel}: invalid label values={bad_labels}")
+        if bad_label_ids > 0:
             status = "fail"
-            details.append(
-                f"{rel}: rows with unknown labels={bad_rows} "
-                f"(unknown tokens: {sorted(unknown_tokens)})"
-            )
+            details.append(f"{rel}: label_id mismatches={bad_label_ids}")
         details.append(
-            f"{rel}: total={row_count}, valid={valid_rows}, "
-            f"bad={bad_rows}, empty={empty_labels_rows}, "
-            f"missing_local_files={missing_local_files}"
+            f"{rel}: rows={row_count}, missing_local_files={missing_local_files}"
         )
 
     elapsed = round(time.perf_counter() - start, 3)

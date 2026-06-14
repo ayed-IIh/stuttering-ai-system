@@ -18,6 +18,7 @@ from backend.app.middleware import (
     build_error_payload,
     register_exception_handlers,
 )
+from backend.services.feedback_service import FeedbackStore
 from backend.services.model_service import ModelService
 
 logger = structlog.get_logger(__name__)
@@ -75,7 +76,15 @@ async def lifespan(app: FastAPI):
         raise
     app.state.model_service = model_service
     app.state.service_version = settings.SERVICE_VERSION
-    log.info("model_ready", loaded=model_service.is_loaded())
+    app.state.feedback_store = FeedbackStore(
+        settings.FEEDBACK_DIR,
+        max_audio_bytes=settings.MAX_FEEDBACK_AUDIO_MB * 1024 * 1024,
+    )
+    log.info(
+        "model_ready",
+        loaded=model_service.is_loaded(),
+        feedback_dir=settings.FEEDBACK_DIR,
+    )
     yield
     model_service.shutdown()
     app.state.model_service = None

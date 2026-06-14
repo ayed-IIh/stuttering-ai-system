@@ -1,10 +1,11 @@
-"""HTTP-level tests for the multi-label /predict, /classes, /health routes."""
-
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 
-from shared.labels import CLASS_LABELS, NUM_CLASSES
+import pytest
+
+from shared.labels import NUM_CLASSES
 
 
 def test_health_returns_200(client) -> None:
@@ -16,8 +17,8 @@ def test_health_returns_200(client) -> None:
     assert "version" in payload
 
 
-def test_classes_returns_7_labels(client) -> None:
-    """Canonical taxonomy length must equal NUM_CLASSES (7)."""
+def test_classes_returns_5_labels(client) -> None:
+    """Canonical taxonomy length (repo uses seven labels; SDQ text referenced five)."""
     response = client.get("/api/v1/classes")
     assert response.status_code == 200
     payload = response.json()
@@ -26,9 +27,7 @@ def test_classes_returns_7_labels(client) -> None:
     assert payload["id_to_label"]["0"] == "fluent"
 
 
-def test_predict_valid_wav_returns_multi_label_response(
-    client, fixture_wav_path: Path
-) -> None:
+def test_predict_valid_wav_returns_prediction(client, fixture_wav_path: Path) -> None:
     data = fixture_wav_path.read_bytes()
     response = client.post(
         "/api/v1/predict",
@@ -36,42 +35,17 @@ def test_predict_valid_wav_returns_multi_label_response(
     )
     assert response.status_code == 200
     payload = response.json()
-    # New multi-label envelope
-    assert "predicted_classes" in payload
-    assert "all_scores" in payload
-    assert "threshold" in payload
-    assert "model_version" in payload
-    assert "request_id" in payload
-    assert "processing_time_ms" in payload
-    # Old single-label fields must be absent
-    assert "predicted_class" not in payload
-    assert "confidence_scores" not in payload
-    # all_scores has exactly the 7 keys
-    assert set(payload["all_scores"].keys()) == set(CLASS_LABELS)
+    assert payload["predicted_class"] == "fluent"
+    assert "confidence_scores" in payload
+    assert len(payload["confidence_scores"]) == NUM_CLASSES
+    assert payload["request_id"]
     assert payload["model_version"] == "mock-v1"
 
 
-def test_predict_zero_classes_above_threshold_returns_empty_list(
-    client, fixture_wav_path: Path
-) -> None:
-    """Default mock has every score at 1/7 (~0.143) < threshold 0.5."""
-    data = fixture_wav_path.read_bytes()
-    response = client.post(
-        "/api/v1/predict",
-        files={"audio_file": ("silence.wav", data, "audio/wav")},
-    )
-    assert response.status_code == 200
-    assert response.json()["predicted_classes"] == []
-
-
-def test_predict_two_classes_above_threshold(
-    client, test_app, fixture_wav_path: Path
-) -> None:
-    """When the mock returns two classes above threshold, both appear."""
-    mock = test_app.state.model_service
-    mock.next_scores = {label: 0.0 for label in CLASS_LABELS}
-    mock.next_scores["blocks"] = 0.9
-    mock.next_scores["prolongations"] = 0.7
+def test_predict_returns_mobile_multilabel_contract(client, fixture_wav_path: Path) -> None:
+    """The /predict response must carry the multi-label-shaped fields the mobile
+    client requires (predicted_classes[], all_scores, threshold) — single-label
+    output maps to exactly one predicted_classes entry."""
     data = fixture_wav_path.read_bytes()
     response = client.post(
         "/api/v1/predict",
@@ -79,34 +53,103 @@ def test_predict_two_classes_above_threshold(
     )
     assert response.status_code == 200
     payload = response.json()
-    names = [c["class"] for c in payload["predicted_classes"]]
-    assert "blocks" in names
-    assert "prolongations" in names
-    # Sorted by descending confidence
-    assert payload["predicted_classes"][0]["class"] == "blocks"
-    assert payload["predicted_classes"][1]["class"] == "prolongations"
-    mock.next_scores = None  # reset
+
+    # predicted_classes: list of objects, each with `class` + `confidence`
+    assert isinstance(payload["predicted_classes"], list)
+    assert len(payload["predicted_classes"]) == 1
+    entry = payload["predicted_classes"][0]
+    assert entry["class"] == payload["predicted_class"]  # serialized via alias
+    assert isinstance(entry["confidence"], float)
+
+    # all_scores: full 0-1 map of every class
+    assert isinstance(payload["all_scores"], dict)
+    assert len(payload["all_scores"]) == NUM_CLASSES
+    assert all(0.0 <= v <= 1.0 for v in payload["all_scores"].values())
+
+    # threshold equals the winner's confidence (single-label consistency)
+    winner_conf = payload["all_scores"][payload["predicted_class"]]
+    assert payload["threshold"] == winner_conf
+    assert entry["confidence"] == winner_conf
 
 
-def test_predict_all_seven_classes_above_threshold(
-    client, test_app, fixture_wav_path: Path
-) -> None:
-    mock = test_app.state.model_service
-    mock.next_scores = {label: 0.99 for label in CLASS_LABELS}
-    data = fixture_wav_path.read_bytes()
+def test_feedback_accepts_correction(client, fixture_wav_path: Path) -> None:
+    """The /feedback endpoint stores a therapist correction and returns accepted."""
+    audio_b64 = base64.b64encode(fixture_wav_path.read_bytes()).decode("ascii")
     response = client.post(
-        "/api/v1/predict",
-        files={"audio_file": ("silence.wav", data, "audio/wav")},
+        "/api/v1/feedback",
+        json={
+            "audio_base64": audio_b64,
+            "correct_labels": ["blocks", "prolongations"],
+            "original_prediction": ["fluent"],
+            "model_version": "v3.0",
+        },
     )
     assert response.status_code == 200
-    assert len(response.json()["predicted_classes"]) == NUM_CLASSES
-    mock.next_scores = None
+    payload = response.json()
+    assert payload["status"] == "accepted"
+    assert payload["feedback_id"]
+    assert payload["stored_count"] >= 1
 
 
-def test_predict_invalid_mime_type_returns_415(
-    client, fixture_wav_path: Path
-) -> None:
-    """Invalid MIME is rejected with 415 Unsupported Media Type."""
+def test_feedback_rejects_invalid_base64(client) -> None:
+    response = client.post(
+        "/api/v1/feedback",
+        json={
+            "audio_base64": "!!!not-base64!!!",
+            "correct_labels": ["blocks"],
+            "original_prediction": ["fluent"],
+            "model_version": "v3.0",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_FEEDBACK"
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b"not a wav file body at all",  # wrong header -> wave.Error
+        b"short",  # too short to hold a chunk header -> EOFError
+    ],
+)
+def test_feedback_rejects_non_wav_audio(client, raw: bytes) -> None:
+    """Valid base64 but non-WAV bytes must be rejected (corpus integrity).
+
+    Covers both wave failure modes: a wrong RIFF header (wave.Error) and a
+    payload too short to parse (EOFError) — the latter must not 500.
+    """
+    audio_b64 = base64.b64encode(raw).decode("ascii")
+    response = client.post(
+        "/api/v1/feedback",
+        json={
+            "audio_base64": audio_b64,
+            "correct_labels": ["blocks"],
+            "original_prediction": [],
+            "model_version": "v3.0",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_FEEDBACK"
+
+
+def test_feedback_rejects_unknown_label(client, fixture_wav_path: Path) -> None:
+    """A correction with a label outside the taxonomy must be rejected."""
+    audio_b64 = base64.b64encode(fixture_wav_path.read_bytes()).decode("ascii")
+    response = client.post(
+        "/api/v1/feedback",
+        json={
+            "audio_base64": audio_b64,
+            "correct_labels": ["not_a_real_class"],
+            "original_prediction": ["fluent"],
+            "model_version": "v3.0",
+        },
+    )
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "INVALID_FEEDBACK"
+
+
+def test_predict_invalid_mime_type_returns_400(client, fixture_wav_path: Path) -> None:
+    """Invalid MIME is rejected with 415 Unsupported Media Type (middleware contract)."""
     data = fixture_wav_path.read_bytes()
     response = client.post(
         "/api/v1/predict",
@@ -140,15 +183,3 @@ def test_predict_oversized_file_returns_413(client) -> None:
     )
     assert response.status_code == 413
     assert response.json()["error_code"] == "FILE_TOO_LARGE"
-
-
-def test_all_scores_has_exactly_seven_keys(
-    client, fixture_wav_path: Path
-) -> None:
-    data = fixture_wav_path.read_bytes()
-    response = client.post(
-        "/api/v1/predict",
-        files={"audio_file": ("silence.wav", data, "audio/wav")},
-    )
-    assert response.status_code == 200
-    assert len(response.json()["all_scores"]) == NUM_CLASSES

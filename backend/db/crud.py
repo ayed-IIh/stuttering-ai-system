@@ -1,27 +1,15 @@
-"""Database CRUD helpers for the multi-label predictions schema.
-
-Two-table writes:
-    1. :func:`create_prediction` inserts the parent ``predictions`` row.
-    2. :func:`insert_prediction_classes` inserts 0..N child
-       ``prediction_classes`` rows after the threshold filter.
-
-Use the two together when persisting a complete prediction; the route
-handler in ``backend/api/routes.py`` does this.
-"""
-
-from __future__ import annotations
+from typing import List, Optional
 
 import logging
 import uuid
-from typing import List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .models import ModelVersion, Prediction, PredictionClass
-from .schemas import PredictionClassCreate, PredictionCreate
+from .models import ModelVersion, Prediction
+from .schemas import PredictionCreate
 
 logger = logging.getLogger(__name__)
 
@@ -29,17 +17,7 @@ logger = logging.getLogger(__name__)
 async def get_model_version_id_by_label(
     db: AsyncSession, model_version: str
 ) -> Optional[uuid.UUID]:
-    """Resolve ``model_versions.id`` from the version label.
-
-    Args:
-        db: Open async DB session.
-        model_version: Version string from the loaded checkpoint (e.g. ``"1.0.0"``).
-
-    Returns:
-        The matching ``ModelVersion.id`` or ``None`` when nothing matches or
-        the lookup itself errors. Errors are logged but never re-raised so
-        the caller can decide whether to skip persistence.
-    """
+    """Resolve ``model_versions.id`` from the string label (e.g. ``0.1.0``)."""
     try:
         result = await db.execute(
             select(ModelVersion.id)
@@ -48,29 +26,13 @@ async def get_model_version_id_by_label(
             .limit(1)
         )
         return result.scalar_one_or_none()
-    except SQLAlchemyError as exc:
-        logger.warning(
-            "Could not resolve model_version_id for %r: %s", model_version, exc
-        )
+    except SQLAlchemyError as e:
+        logger.warning("Could not resolve model_version_id for %r: %s", model_version, e)
         return None
 
 
-async def create_prediction(
-    db: AsyncSession, data: PredictionCreate
-) -> Prediction:
-    """Insert one parent ``predictions`` row.
-
-    Args:
-        db: Open async DB session.
-        data: Validated :class:`PredictionCreate` payload.
-
-    Returns:
-        The committed :class:`Prediction` ORM instance.
-
-    Raises:
-        HTTPException: 400 on DB constraint violations, 500 on other DB errors.
-    """
-    values = data.model_dump()
+async def create_prediction(db: AsyncSession, data: PredictionCreate) -> Prediction:
+    values = data.dict()
 
     if not values.get("request_id"):
         values["request_id"] = uuid.uuid4()
@@ -83,12 +45,14 @@ async def create_prediction(
         await db.refresh(prediction)
         return prediction
 
-    except IntegrityError as exc:
+    except IntegrityError as e:
         await db.rollback()
-        msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
+        msg = str(e.orig) if hasattr(e, "orig") else str(e)
 
-        if "chk_all_scores_type" in msg:
-            detail = "all_scores must be a JSON object."
+        if "chk_predicted_class" in msg:
+            detail = "predicted_class must be one of the allowed classes."
+        elif "chk_confidence_scores_keys" in msg:
+            detail = "confidence_scores must contain exactly the 7 class keys."
         elif "fk_predictions_model_version_id" in msg or "model_version_id" in msg:
             detail = "model_version_id does not exist. Create/find a model version first."
         else:
@@ -96,9 +60,9 @@ async def create_prediction(
 
         raise HTTPException(status_code=400, detail=detail)
 
-    except SQLAlchemyError as exc:
+    except SQLAlchemyError as e:
         await db.rollback()
-        logger.error("Database error while creating prediction: %s", exc)
+        logger.error("Database error while creating prediction: %s", e)
         raise HTTPException(status_code=500, detail="Internal DB error.")
 
     except Exception:
@@ -110,87 +74,16 @@ async def create_prediction(
         )
 
 
-async def insert_prediction_classes(
-    db: AsyncSession,
-    prediction_id: uuid.UUID,
-    classes: List[dict],
-) -> int:
-    """Insert one ``prediction_classes`` row per detected class.
-
-    Args:
-        db: Open async DB session. The caller is responsible for the parent
-            ``predictions`` row already existing — the FK on
-            ``prediction_classes.prediction_id`` will reject orphan inserts.
-        prediction_id: UUID of the parent row.
-        classes: List of ``{"class_label": str, "confidence": float}`` dicts.
-            Each entry is validated against :class:`PredictionClassCreate`
-            (which enforces taxonomy + range) before insert.
-
-    Returns:
-        Number of rows inserted. Returns 0 (and logs a warning) on any
-        :class:`SQLAlchemyError` during the write — this function never
-        raises a DB error to the caller. ``ValueError`` from the per-entry
-        validator IS raised so callers can surface bad payloads at the API
-        boundary.
-
-    Raises:
-        ValueError: If any entry fails :class:`PredictionClassCreate` validation.
-    """
-    if not classes:
-        return 0
-
-    rows: list[PredictionClass] = []
-    for idx, entry in enumerate(classes):
-        # Surface missing keys as ValueError so the caller has one error type
-        # to handle for "bad per-class payload" (matches the docstring contract
-        # and what PredictionClassCreate already raises for invalid values).
-        try:
-            class_label = entry["class_label"]
-            confidence_raw = entry["confidence"]
-        except KeyError as exc:
-            raise ValueError(
-                f"classes[{idx}] missing required key: {exc.args[0]!r} "
-                f"(expected 'class_label' and 'confidence')"
-            ) from exc
-        payload = PredictionClassCreate(
-            prediction_id=prediction_id,
-            class_label=class_label,
-            confidence=float(confidence_raw),
-        )
-        rows.append(
-            PredictionClass(
-                prediction_id=payload.prediction_id,
-                class_label=payload.class_label,
-                confidence=payload.confidence,
-            )
-        )
-
-    try:
-        db.add_all(rows)
-        await db.commit()
-        return len(rows)
-    except SQLAlchemyError as exc:
-        logger.warning(
-            "insert_prediction_classes failed for %s: %s", prediction_id, exc
-        )
-        try:
-            await db.rollback()
-        except SQLAlchemyError:
-            logger.exception("rollback also failed for %s", prediction_id)
-        return 0
-
-
-async def get_recent_predictions(
-    db: AsyncSession, limit: int = 50
-) -> List[Prediction]:
-    """Fetch the most recent predictions, newest first."""
+async def get_recent_predictions(db: AsyncSession, limit: int = 50) -> List[Prediction]:
     limit = max(1, min(limit, 50))
     try:
         result = await db.execute(
-            select(Prediction).order_by(Prediction.created_at.desc()).limit(limit)
+            select(Prediction)
+            .order_by(Prediction.created_at.desc())
+            .limit(limit)
         )
         predictions = result.scalars().all()
         return predictions
-    except SQLAlchemyError as exc:
-        logger.error("Database error while fetching predictions: %s", exc)
+    except SQLAlchemyError as e:
+        logger.error("Database error while fetching predictions: %s", e)
         raise HTTPException(status_code=500, detail="Internal DB error.")

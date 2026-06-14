@@ -28,6 +28,9 @@ class ModelConfig:
     dropout_rate: float = 0.1
     freeze_encoder: bool = True
     learning_rate: float = 1e-4
+    # Opt-in memory/compute tradeoff for large encoders (XLS-R 300m/1b/2b).
+    # Off by default; has no effect on inference output, only training memory.
+    gradient_checkpointing: bool = False
 
 
 def _get_device() -> torch.device:
@@ -63,6 +66,13 @@ class StutteringClassifier(nn.Module):
         super().__init__()
         self.config = config
         self.encoder = Wav2Vec2Model.from_pretrained(config.model_name)
+        # Opt-in gradient checkpointing to fit large encoder variants
+        # (XLS-R 300m/1b/2b) in limited VRAM. Saves ~80% activation memory at
+        # ~20% compute overhead — no effect on output, only training memory.
+        if config.gradient_checkpointing and hasattr(
+            self.encoder, "gradient_checkpointing_enable"
+        ):
+            self.encoder.gradient_checkpointing_enable()
         hidden_size = self.encoder.config.hidden_size
 
         if config.freeze_encoder:

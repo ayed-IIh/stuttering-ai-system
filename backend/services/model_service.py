@@ -10,6 +10,7 @@ import struct
 import threading
 import time
 import wave
+from collections.abc import Mapping
 from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
@@ -152,12 +153,10 @@ class ModelService:
         if self._loaded:
             return
         started_at = time.perf_counter()
-        # trigger S3 download before resolving paths
-        if self._settings.MODEL_SOURCE == "s3":
-            from backend.app.config import download_model_if_needed
-            download_model_if_needed(self._settings)
+        if self._settings.MODEL_SOURCE != "local":
+            raise ModelNotLoadedError("Only MODEL_SOURCE=local is implemented for ModelService")
 
-        artifact_dir, model_path, config_path = self._resolve_artifact_paths(str(self._settings.resolved_model_path))
+        artifact_dir, model_path, config_path = self._resolve_artifact_paths(self._settings.MODEL_PATH)
         if not config_path.exists() or not model_path.exists():
             if self._settings.PRODUCTION_MODE:
                 raise ModelNotLoadedError(
@@ -362,18 +361,6 @@ class ModelService:
         )
 
     def predict(self, audio_bytes: bytes) -> dict[str, Any]:
-        """Run multi-label inference on a WAV payload.
-
-        Returns a dict with:
-            predicted_classes : list of ``{class, confidence}`` for every class
-                                whose sigmoid probability is ``>= threshold``.
-                                Empty list when no class crosses the threshold.
-            all_scores        : full per-class sigmoid probabilities (do NOT
-                                sum to 1.0 — each is an independent binary head).
-            threshold         : the threshold actually applied (from settings).
-            processing_time_ms: measured wall-clock for this call.
-            model_version     : the loaded model artifact's version string.
-        """
         if not self._loaded:
             raise ModelNotLoadedError("ModelService is not loaded")
         started_at = time.perf_counter()
@@ -382,36 +369,15 @@ class ModelService:
                 waveform = self._decode_and_preprocess_wav(audio_bytes)
                 inputs = self._prepare_inputs(waveform)
                 outputs = self._forward(inputs)
-                probs = self._sigmoid(outputs)
-                threshold = float(self._settings.MULTI_LABEL_THRESHOLD)
-                # The wire contract is keyed by canonical CLASS_LABELS; do not
-                # silently slice or remap — drift here would attach probs to
-                # the wrong class names. Fail fast if the loaded artifact's
-                # class order disagrees with the shared taxonomy.
-                if (
-                    list(self._class_names) != list(CLASS_LABELS)
-                    or len(probs) != len(CLASS_LABELS)
-                ):
-                    raise PredictionError(
-                        "Model artifact class order does not match "
-                        "shared.labels.CLASS_LABELS — refusing to assign "
-                        "probabilities to potentially wrong class names."
-                    )
-                all_scores = {
-                    name: float(probs[i]) for i, name in enumerate(CLASS_LABELS)
+                probs = self._softmax(outputs)
+                predicted_idx = max(range(len(probs)), key=lambda i: probs[i])
+                confidence_scores = {
+                    label: float(probs[i]) for i, label in enumerate(self._class_names[: len(probs)])
                 }
-                predicted_classes = [
-                    {"class": name, "confidence": float(probs[i])}
-                    for i, name in enumerate(CLASS_LABELS)
-                    if probs[i] >= threshold
-                ]
-                # Sort detected classes by confidence descending for stable client UX.
-                predicted_classes.sort(key=lambda d: d["confidence"], reverse=True)
                 elapsed_ms = int((time.perf_counter() - started_at) * 1000)
                 return {
-                    "predicted_classes": predicted_classes,
-                    "all_scores": all_scores,
-                    "threshold": threshold,
+                    "predicted_class": self._class_names[predicted_idx],
+                    "confidence_scores": confidence_scores,
                     "processing_time_ms": elapsed_ms,
                     "model_version": self._model_version,
                 }
@@ -421,7 +387,9 @@ class ModelService:
                 raise PredictionError(f"Inference failed: {exc}") from exc
 
     def _decode_and_preprocess_wav(self, audio_bytes: bytes) -> Any:
-        """Decode WAV bytes and apply the same core steps as ``audio_loader.load_audio`` (inference: no trim)."""
+        """Decode WAV and match the training pipeline (ai/training/dataloader.py:ManifestAudioDataset):
+        decode → mean to mono → squeeze → resample. No peak-normalize, no pad/truncate —
+        the Wav2Vec2Processor handles padding downstream."""
         if not audio_bytes:
             raise InvalidAudioError("Audio payload is empty")
 
@@ -433,18 +401,16 @@ class ModelService:
         except Exception as exc:
             raise InvalidAudioError(f"Invalid or undecodable WAV: {exc}") from exc
 
-        waveform = waveform.to(torch.float32)
         if waveform.shape[0] > 1:
             waveform = waveform.mean(dim=0, keepdim=True)
+        waveform = waveform.squeeze(0)
 
         target_sr = self._target_sample_rate
         if int(native_sr) != target_sr:
-            waveform = TAF.resample(waveform, orig_freq=int(native_sr), new_freq=target_sr)
+            resampler = torchaudio.transforms.Resample(int(native_sr), target_sr)
+            waveform = resampler(waveform.unsqueeze(0)).squeeze(0)
 
-        waveform = normalize_waveform(waveform, method="peak")
-        waveform = pad_or_truncate(
-            waveform, sr=target_sr, max_duration_sec=self._max_duration_sec
-        )
+        waveform = waveform.unsqueeze(0)
         return waveform.to(torch.float32)
 
     def _decode_wav_bytes_wave_only(self, audio_bytes: bytes) -> Any:
@@ -524,6 +490,12 @@ class ModelService:
                 padding=True,
             )
 
+        # Transformers processors return a BatchFeature (a UserDict / Mapping),
+        # which is NOT a plain ``dict`` instance on transformers >= 4.x.
+        # Normalize to a plain dict so the type check and the downstream
+        # ``model(**inputs)`` work across versions.
+        if isinstance(inputs, Mapping):
+            inputs = dict(inputs)
         if not isinstance(inputs, dict):
             raise PredictionError("Processor returned invalid payload")
         if torch is not None:
@@ -545,19 +517,12 @@ class ModelService:
             logits = output
         return logits
 
-    def _sigmoid(self, logits: Any) -> list[float]:
-        """Per-class sigmoid for multi-label decoding.
-
-        Unlike softmax, the resulting probabilities are *independent* per class
-        and do NOT sum to 1.0. Accepts torch tensors, dicts with ``"logits"``,
-        nested lists, or flat lists/tuples — same broad input shapes the old
-        softmax helper supported.
-        """
+    def _softmax(self, logits: Any) -> list[float]:
         if torch is not None and torch.is_tensor(logits):
             tensor = logits
             if tensor.dim() > 1:
                 tensor = tensor[0]
-            probs = torch.sigmoid(tensor).detach().cpu().tolist()
+            probs = torch.softmax(tensor, dim=-1).detach().cpu().tolist()
             return [float(p) for p in probs]
         if isinstance(logits, dict) and "logits" in logits:
             logits = logits["logits"]
@@ -566,16 +531,10 @@ class ModelService:
         arr = [float(x) for x in logits]
         if not arr:
             raise PredictionError("Model returned empty logits")
-        # 1 / (1 + e^-x); clamp x to avoid overflow in math.exp.
-        out: list[float] = []
-        for v in arr:
-            if v >= 0:
-                ev = math.exp(-v)
-                out.append(1.0 / (1.0 + ev))
-            else:
-                ev = math.exp(v)
-                out.append(ev / (1.0 + ev))
-        return out
+        max_v = max(arr)
+        exps = [math.exp(v - max_v) for v in arr]
+        total = sum(exps)
+        return [v / total for v in exps]
 
     def shutdown(self) -> None:
         self._model = None
