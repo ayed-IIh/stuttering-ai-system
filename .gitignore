@@ -62,6 +62,9 @@ ai/models/checkpoints/
 # Torch cache
 .torch/
 
+# HITL feedback store (runtime therapist corrections — audio + manifest)
+feedback_data/
+
 # Environment files
 .env
 .env.*

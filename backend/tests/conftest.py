@@ -110,10 +110,15 @@ def test_app(test_settings: Any) -> FastAPI:
     from backend.app.middleware import RequestLoggingMiddleware, register_exception_handlers
     from backend.db.database import get_db
 
+    import tempfile
+
+    from backend.services.feedback_service import FeedbackStore
+
     app = FastAPI(title="Stuttering AI API (integration tests)")
     app.state.settings = test_settings
     app.state.model_service = MockModelService(test_settings)
     app.state.service_version = test_settings.SERVICE_VERSION
+    app.state.feedback_store = FeedbackStore(tempfile.mkdtemp(prefix="hitl_test_"))
 
     app.add_middleware(RequestLoggingMiddleware)
     register_exception_handlers(app)

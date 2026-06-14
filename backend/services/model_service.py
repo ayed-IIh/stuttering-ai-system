@@ -10,6 +10,7 @@ import struct
 import threading
 import time
 import wave
+from collections.abc import Mapping
 from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
@@ -489,6 +490,12 @@ class ModelService:
                 padding=True,
             )
 
+        # Transformers processors return a BatchFeature (a UserDict / Mapping),
+        # which is NOT a plain ``dict`` instance on transformers >= 4.x.
+        # Normalize to a plain dict so the type check and the downstream
+        # ``model(**inputs)`` work across versions.
+        if isinstance(inputs, Mapping):
+            inputs = dict(inputs)
         if not isinstance(inputs, dict):
             raise PredictionError("Processor returned invalid payload")
         if torch is not None:

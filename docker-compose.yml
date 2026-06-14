@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -29,9 +27,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      # Persist HITL therapist corrections across restarts.
+      - feedback_data:/app/feedback_data
+    healthcheck:
+      # Lets dependents (and the mobile stack) wait until the model is loaded.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
     restart: unless-stopped
     networks:
-      - app-network
+      app-network:
+        # The mobile API reaches the AI at http://ai-service:8000 (see its
+        # AI_PREDICT_URL default). Expose that hostname as a network alias so
+        # both stacks connect when joined on a shared network.
+        aliases:
+          - ai-service
 
   pgadmin:
     image: dpage/pgadmin4
@@ -54,6 +67,7 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  feedback_data:
 
 networks:
   app-network:
