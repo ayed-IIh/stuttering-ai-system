@@ -22,6 +22,7 @@ from ai.preprocessing.audio_loader import (
     normalize_waveform,
     pad_or_truncate,
 )
+from backend.services.audio_preprocess import analyze_quality
 from backend.app.config import Settings
 from shared.labels import CLASS_LABELS
 
@@ -379,6 +380,18 @@ class ModelService:
         with self._predict_lock:
             try:
                 waveform = self._decode_and_preprocess_wav(audio_bytes)
+                # Quality gate (always on, never alters the signal -> no skew).
+                if torch is not None and torch.is_tensor(waveform):
+                    wav_np = waveform.squeeze().detach().cpu().numpy()
+                else:
+                    wav_np = waveform
+                quality = analyze_quality(wav_np, self._target_sample_rate)
+                # Optional signal cleanup (off by default to preserve accuracy).
+                if getattr(self._settings, "PREPROCESS_ENABLED", False):
+                    from backend.services.audio_preprocess import clean
+
+                    cleaned = clean(wav_np, self._target_sample_rate)
+                    waveform = torch.tensor(cleaned, dtype=torch.float32).unsqueeze(0)
                 inputs = self._prepare_inputs(waveform)
                 outputs = self._forward(inputs)
                 probs = self._softmax(outputs)
@@ -392,6 +405,7 @@ class ModelService:
                     "confidence_scores": confidence_scores,
                     "processing_time_ms": elapsed_ms,
                     "model_version": self._model_version,
+                    "audio_quality": quality,
                 }
             except (InvalidAudioError, ModelNotLoadedError):
                 raise

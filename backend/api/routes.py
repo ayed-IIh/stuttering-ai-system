@@ -68,6 +68,10 @@ class PredictionResponse(BaseModel):
     predicted_classes: list[PredictedClass] = []
     all_scores: dict[str, float] = {}
     threshold: float = 0.0
+    # Recording-quality metrics + warnings (e.g. too_quiet, audio_clipped,
+    # mostly_silence). Extra field — the mobile ignores it; lets the therapist
+    # treat a poor-quality clip cautiously.
+    audio_quality: dict[str, Any] | None = None
 
 
 class HealthResponse(BaseModel):
@@ -362,6 +366,7 @@ async def predict(
         predicted_classes=predicted_classes,
         all_scores=all_scores,
         threshold=threshold,
+        audio_quality=prediction.get("audio_quality"),
     )
     client = request.client
     background_tasks.add_task(
